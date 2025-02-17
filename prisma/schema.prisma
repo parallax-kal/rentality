@@ -1,0 +1,67 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model User {
+    id        String   @id @default(uuid())
+    name      String
+    email     String   @unique
+    image     String?
+    role      UserRole
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    properties Property[]
+    bookings   Booking[]
+    reviews    Review[]
+}
+
+model Property {
+    id            String   @id @default(uuid())
+    title         String
+    description   String
+    pricePerNight Float
+    location      String
+    host          User     @relation(fields: [id], references: [id])
+    rating        Float    @default(0.0)
+    createdAt     DateTime @default(now())
+    updatedAt     DateTime @updatedAt
+
+    bookings Booking[]
+    reviews  Review[]
+}
+
+model Booking {
+    id           String        @id @default(uuid())
+    renter       User          @relation(fields: [id], references: [id], map: "user_booking")
+    property     Property      @relation(fields: [id], references: [id], map: "property_booking ")
+    checkInDate  DateTime
+    checkOutDate DateTime
+    status       BookingStatus
+    createdAt    DateTime      @default(now())
+}
+
+model Review {
+    id        String   @id @default(uuid())
+    property  Property @relation(fields: [id], references: [id], map: "property_review")
+    renter    User     @relation(fields: [id], references: [id], map: "user_review")
+    rating    Int
+    comment   String
+    createdAt DateTime @default(now())
+}
+
+enum UserRole {
+    RENTER
+    HOST
+}
+
+enum BookingStatus {
+    PENDING
+    CONFIRMED
+    CANCELED
+}
