@@ -7,6 +7,33 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
+model Account {
+    id                String  @id @default(cuid())
+    userId            String
+    type              String
+    provider          String
+    providerAccountId String
+    refresh_token     String? @db.Text
+    access_token      String? @db.Text
+    expires_at        Int?
+    token_type        String?
+    scope             String?
+    id_token          String? @db.Text
+    session_state     String?
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@unique([provider, providerAccountId])
+}
+
+model Session {
+    id           String   @id @default(cuid())
+    sessionToken String   @unique
+    userId       String
+    expires      DateTime
+    user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
 model User {
     id        String   @id @default(uuid())
     name      String
@@ -19,6 +46,8 @@ model User {
     properties Property[]
     bookings   Booking[]
     reviews    Review[]
+    accounts   Account[]
+    sessions   Session[]
 }
 
 model Property {
@@ -27,7 +56,8 @@ model Property {
     description   String
     pricePerNight Float
     location      String
-    host          User     @relation(fields: [id], references: [id])
+    userId        String
+    host          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
     rating        Float    @default(0.0)
     createdAt     DateTime @default(now())
     updatedAt     DateTime @updatedAt
@@ -37,22 +67,28 @@ model Property {
 }
 
 model Booking {
-    id           String        @id @default(uuid())
-    renter       User          @relation(fields: [id], references: [id], map: "user_booking")
-    property     Property      @relation(fields: [id], references: [id], map: "property_booking ")
+    id           String   @id @default(uuid())
+    renterId     String
+    propertyId   String
     checkInDate  DateTime
     checkOutDate DateTime
     status       BookingStatus
-    createdAt    DateTime      @default(now())
+    createdAt    DateTime @default(now())
+
+    renter      User     @relation(fields: [renterId], references: [id], onDelete: Cascade)
+    property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 }
 
 model Review {
-    id        String   @id @default(uuid())
-    property  Property @relation(fields: [id], references: [id], map: "property_review")
-    renter    User     @relation(fields: [id], references: [id], map: "user_review")
-    rating    Int
-    comment   String
-    createdAt DateTime @default(now())
+    id         String   @id @default(uuid())
+    propertyId String
+    renterId   String
+    rating     Int
+    comment    String
+    createdAt  DateTime @default(now())
+
+    property  Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+    renter    User     @relation(fields: [renterId], references: [id], onDelete: Cascade)
 }
 
 enum UserRole {

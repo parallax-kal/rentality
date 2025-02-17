@@ -2,11 +2,16 @@ import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+const isAuthInApis = (pathname: string) => {
+  const authPathnames = ["/auth/signin", "/auth/signout"];
+  return authPathnames.includes(pathname);
+};
+
 export async function middleware(request: NextRequest) {
   const token = await getToken({ req: request });
 
   if (request.nextUrl.pathname.startsWith("/api")) {
-    if (!token) {
+    if (  isAuthInApis(request.nextUrl.pathname) && !token) {
       return new NextResponse(
         JSON.stringify({ error: "Authentication required" }),
         { status: 401 }
