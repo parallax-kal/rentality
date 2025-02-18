@@ -20,6 +20,7 @@
 # production
 /build
 .env*
+migrations
 
 # misc
 .DS_Store

@@ -8,45 +8,36 @@ datasource db {
 }
 
 model Account {
-    userId            String
+    id                String  @id @default(uuid())
+    userId            String  @map("user_id")
     type              String
     provider          String
-    providerAccountId String
-    refresh_token     String?
-    access_token      String?
+    providerAccountId String  @map("provider_account_id")
+    refresh_token     String? @db.Text
+    access_token      String? @db.Text
     expires_at        Int?
     token_type        String?
     scope             String?
-    id_token          String?
+    id_token          String? @db.Text
     session_state     String?
-
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
 
     user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-    @@id([provider, providerAccountId])
+    @@unique([provider, providerAccountId])
+    @@map("accounts")
 }
 
 model Session {
-    userId            String
-    type              String
-    provider          String
-    providerAccountId String
-    refresh_token     String?
-    access_token      String?
-    expires_at        Int?
-    token_type        String?
-    scope             String?
-    id_token          String?
-    session_state     String?
-
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+    id           String   @id @default(uuid())
+    userId       String   @map("user_id")
+    sessionToken String   @unique @map("session_token")
+    expires      DateTime
+    createdAt    DateTime @default(now())
+    updatedAt    DateTime @updatedAt
 
     user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-    @@id([provider, providerAccountId])
+    @@map("sessions")
 }
 
 model User {
@@ -64,13 +55,15 @@ model User {
     reviews    Review[]
     accounts   Account[]
     sessions   Session[]
+
+    @@map("users")
 }
 
 model Property {
     id            String   @id @default(uuid())
     title         String
     description   String
-    pricePerNight Float
+    pricePerNight Float    @map("price_per_night")
     location      String
     userId        String
     host          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -80,31 +73,37 @@ model Property {
 
     bookings Booking[]
     reviews  Review[]
+
+    @@map("properties")
 }
 
 model Booking {
     id           String        @id @default(uuid())
-    renterId     String
-    propertyId   String
-    checkInDate  DateTime
-    checkOutDate DateTime
+    renterId     String        @map("renter_id")
+    propertyId   String        @map("property_id")
+    checkInDate  DateTime      @map("checking_date")
+    checkOutDate DateTime      @map("checkout_date")
     status       BookingStatus
     createdAt    DateTime      @default(now())
 
     renter   User     @relation(fields: [renterId], references: [id], onDelete: Cascade)
     property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+    @@map("bookings")
 }
 
 model Review {
     id         String   @id @default(uuid())
-    propertyId String
-    renterId   String
+    renterId   String   @map("renter_id")
+    propertyId String   @map("property_id")
     rating     Int
     comment    String
     createdAt  DateTime @default(now())
 
     property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
     renter   User     @relation(fields: [renterId], references: [id], onDelete: Cascade)
+
+    @@map("reviews")
 }
 
 enum UserRole {
