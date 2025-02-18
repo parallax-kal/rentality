@@ -15,6 +15,7 @@ import { Menu, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Logo from "./Logo";
 import { ModeToggle } from "./mode-toggler";
+import { usePathname } from "next/navigation";
 
 const Navbar = () => {
   const { data: session } = useSession();
@@ -22,7 +23,7 @@ const Navbar = () => {
 
   const navs = [
     { name: "Home", href: "/" },
-    { name: "Rentals", href: "/properties" },
+    { name: "Rentals", href: "/rentals" },
     { name: "About Us", href: "/about" },
     { name: "Contact", href: "/contact" },
   ];
@@ -93,6 +94,8 @@ const Navbar = () => {
     </div>
   );
 
+  const pathname = usePathname();
+
   return (
     <div
       className={cn(
@@ -126,7 +129,9 @@ const Navbar = () => {
           <Link
             key={nav.name}
             href={nav.href}
-            className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+            className={cn("text-sm font-medium text-muted-foreground hover:text-primary transition-colors", {
+              "text-primary ": pathname === nav.href
+            })}
           >
             {nav.name}
           </Link>
