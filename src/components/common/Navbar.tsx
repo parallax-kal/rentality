@@ -99,7 +99,7 @@ const Navbar = () => {
   return (
     <div
       className={cn(
-        "flex items-center px-4 sm:px-8 lg:px-16 py-2 lg:py-3 justify-between fixed top-0 w-screen z-50 transition-all max-w-[110rem] left-1/2 -translate-x-1/2",
+        "flex items-center px-4 sm:px-8 lg:px-16 py-2 lg:py-3 justify-between border-b fixed top-0 w-screen z-50 transition-all max-w-[110rem] left-1/2 -translate-x-1/2",
         {
           "bg-clip-padding backdrop-filter backdrop-blur-2xl bg-opacity-70 shadow-sm":
             scrolled,
@@ -129,8 +129,8 @@ const Navbar = () => {
           <Link
             key={nav.name}
             href={nav.href}
-            className={cn("text-sm font-medium text-muted-foreground hover:text-primary transition-colors", {
-              "text-primary ": pathname === nav.href
+            className={cn("font-medium text-muted-foreground hover:text-primary transition-colors", {
+              "text-primary font-semibold": pathname === nav.href
             })}
           >
             {nav.name}

@@ -31,7 +31,7 @@ const authOptions: NextAuthOptions = {
             data: {
               email: user.email,
               name: user.name || "",
-              role: "RENTER", 
+              role: "RENTER",
               image: user.image,
             },
           });
