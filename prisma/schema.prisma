@@ -8,40 +8,56 @@ datasource db {
 }
 
 model Account {
-    id                String  @id @default(cuid())
     userId            String
     type              String
     provider          String
     providerAccountId String
-    refresh_token     String? @db.Text
-    access_token      String? @db.Text
+    refresh_token     String?
+    access_token      String?
     expires_at        Int?
     token_type        String?
     scope             String?
-    id_token          String? @db.Text
+    id_token          String?
     session_state     String?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
     user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-    @@unique([provider, providerAccountId])
+    @@id([provider, providerAccountId])
 }
 
 model Session {
-    id           String   @id @default(cuid())
-    sessionToken String   @unique
-    userId       String
-    expires      DateTime
-    user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId            String
+    type              String
+    provider          String
+    providerAccountId String
+    refresh_token     String?
+    access_token      String?
+    expires_at        Int?
+    token_type        String?
+    scope             String?
+    id_token          String?
+    session_state     String?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@id([provider, providerAccountId])
 }
 
 model User {
-    id        String   @id @default(uuid())
-    name      String
-    email     String   @unique
-    image     String?
-    role      UserRole
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+    id            String    @id @default(uuid())
+    name          String
+    email         String    @unique
+    emailVerified DateTime?
+    image         String?
+    role          UserRole
+    createdAt     DateTime  @default(now())
+    updatedAt     DateTime  @updatedAt
 
     properties Property[]
     bookings   Booking[]
@@ -67,16 +83,16 @@ model Property {
 }
 
 model Booking {
-    id           String   @id @default(uuid())
+    id           String        @id @default(uuid())
     renterId     String
     propertyId   String
     checkInDate  DateTime
     checkOutDate DateTime
     status       BookingStatus
-    createdAt    DateTime @default(now())
+    createdAt    DateTime      @default(now())
 
-    renter      User     @relation(fields: [renterId], references: [id], onDelete: Cascade)
-    property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+    renter   User     @relation(fields: [renterId], references: [id], onDelete: Cascade)
+    property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 }
 
 model Review {
@@ -87,8 +103,8 @@ model Review {
     comment    String
     createdAt  DateTime @default(now())
 
-    property  Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-    renter    User     @relation(fields: [renterId], references: [id], onDelete: Cascade)
+    property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+    renter   User     @relation(fields: [renterId], references: [id], onDelete: Cascade)
 }
 
 enum UserRole {
