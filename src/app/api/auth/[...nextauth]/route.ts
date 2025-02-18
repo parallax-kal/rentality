@@ -13,16 +13,7 @@ const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async session({ session, user }) {
-      // Add user ID and role to session
-      if (session.user) {
-        session.user.id = user.id;
-        const dbUser = await prisma.user.findUnique({
-          where: { id: user.id },
-          select: { role: true },
-        });
-        session.user.role = dbUser?.role ?? "RENTER";
-      }
+    async session({ session }) {
       return session;
     },
     async signIn({ user, account }) {
@@ -40,7 +31,8 @@ const authOptions: NextAuthOptions = {
             data: {
               email: user.email,
               name: user.name || "",
-              role: "RENTER", // Default role
+              role: "RENTER", 
+              image: user.image,
             },
           });
         }
@@ -48,7 +40,6 @@ const authOptions: NextAuthOptions = {
 
       return true;
     },
-    
   },
   pages: {
     signIn: "/auth/login",

@@ -56,7 +56,7 @@ const Navbar = () => {
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuItem>
               <Link href="/profile" className="w-full">
-                Profile
+                {session.user.name}
               </Link>
             </DropdownMenuItem>
             {session.user?.role === "HOST" && (
