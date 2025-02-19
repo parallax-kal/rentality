@@ -55,25 +55,25 @@ const Navbar = () => {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem>
-              <Link href="/profile" className="w-full">
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard/profile" className="w-full">
                 {session.user.name}
               </Link>
             </DropdownMenuItem>
             {session.user?.role === "HOST" && (
-              <DropdownMenuItem>
+              <DropdownMenuItem asChild>
                 <Link href="/host/dashboard" className="w-full">
                   Host Dashboard
                 </Link>
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem>
+            <DropdownMenuItem asChild>
               <Link href="/bookings" className="w-full">
                 My Bookings
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem asChild>
               <Link href="/api/auth/signout" className="w-full">
                 Sign Out
               </Link>

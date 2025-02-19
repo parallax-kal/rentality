@@ -54,7 +54,7 @@ export const authOptions: NextAuthOptions = {
 
         // Check if existing user has no role
         // if (existingUser && !existingUser.role) {
-        //   // return "/auth/continue";
+        //   // return "/dashboard/continue";
         //   return true;
         // }
       }
@@ -63,8 +63,8 @@ export const authOptions: NextAuthOptions = {
     },
     async redirect({ url, baseUrl }) {
       // Handle custom redirects
-      if (url.startsWith("/auth/continue")) {
-        return `${baseUrl}/auth/continue`;
+      if (url.startsWith("/dashboard/continue")) {
+        return `${baseUrl}/dashboard/continue`;
       }
       // Default redirect behavior
       return url.startsWith(baseUrl) ? url : baseUrl;
@@ -73,7 +73,7 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/auth/login",
     error: "/auth/error",
-    newUser: "/auth/continue",
+    newUser: "/dashboard/continue",
   },
   secret: process.env.NEXTAUTH_SECRET,
 };

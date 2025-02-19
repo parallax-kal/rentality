@@ -9,6 +9,7 @@ const isAuthInApis = (pathname: string) => {
 
 export async function middleware(request: NextRequest) {
   const token = await getToken({ req: request });
+  console.log(token);
 
   if (request.nextUrl.pathname.startsWith("/api")) {
     if (isAuthInApis(request.nextUrl.pathname) && !token) {
