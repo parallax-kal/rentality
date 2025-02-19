@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,7 +18,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 
 const profileSchema = z.object({
@@ -65,7 +65,6 @@ export default function ProfilePage() {
       setIsLoading(false);
     }
   }
-  
 
   return (
     <div className="container mx-auto max-w-md p-6">
@@ -108,7 +107,6 @@ export default function ProfilePage() {
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="role"
@@ -120,6 +118,9 @@ export default function ProfilePage() {
                         onValueChange={field.onChange}
                         defaultValue={field.value}
                       >
+                        <SelectTrigger className="w-[180px]">
+                          <SelectValue placeholder="Select a fruit" />
+                        </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="RENTER">Renter</SelectItem>
                           <SelectItem value="HOST">Host</SelectItem>
