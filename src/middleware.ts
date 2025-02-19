@@ -11,7 +11,7 @@ export async function middleware(request: NextRequest) {
   const token = await getToken({ req: request });
 
   if (request.nextUrl.pathname.startsWith("/api")) {
-    if (  isAuthInApis(request.nextUrl.pathname) && !token) {
+    if (isAuthInApis(request.nextUrl.pathname) && !token) {
       return new NextResponse(
         JSON.stringify({ error: "Authentication required" }),
         { status: 401 }

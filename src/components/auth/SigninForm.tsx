@@ -2,18 +2,15 @@
 
 import { Button } from "@/components/ui/button";
 import { signIn } from "next-auth/react";
-import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 export default function SignInForm() {
   const [isLoading, setIsLoading] = useState(false);
-  const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/";
 
   const handleGoogleSignIn = async () => {
     try {
       setIsLoading(true);
-      await signIn("google", { callbackUrl });
+      await signIn("google", { callbackUrl : "/"});
     } catch (error) {
       console.error("Error signing in with Google:", error);
     } finally {

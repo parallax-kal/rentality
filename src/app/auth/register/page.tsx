@@ -2,8 +2,8 @@ import SignInForm from "@/components/auth/SigninForm";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Sign In",
-  description: "Sign in to your Rentality account",
+  title: "Register",
+  description: "Register to your Rentality account",
 };
 
 export default function SignInPage() {

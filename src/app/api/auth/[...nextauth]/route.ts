@@ -3,7 +3,7 @@ import GoogleProvider from "next-auth/providers/google";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import prisma from "@/lib/prisma";
 
-const authOptions: NextAuthOptions = {
+export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
     GoogleProvider({
@@ -14,6 +14,20 @@ const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async session({ session }) {
+      // // Add user data to session
+      const dbUser = await prisma.user.findUnique({
+        where: { email: session.user.email! },
+        select: { role: true, id: true },
+      });
+
+      return {
+        ...session,
+        user: {
+          ...session.user,
+          id: dbUser?.id,
+          role: dbUser?.role,
+        },
+      };
       return session;
     },
     async signIn({ user, account }) {
@@ -31,19 +45,35 @@ const authOptions: NextAuthOptions = {
             data: {
               email: user.email,
               name: user.name || "",
-              role: "RENTER",
+              role: null,
               image: user.image,
             },
           });
+          // return true;
         }
+
+        // Check if existing user has no role
+        // if (existingUser && !existingUser.role) {
+        //   // return "/auth/continue";
+        //   return true;
+        // }
       }
 
       return true;
+    },
+    async redirect({ url, baseUrl }) {
+      // Handle custom redirects
+      if (url.startsWith("/auth/continue")) {
+        return `${baseUrl}/auth/continue`;
+      }
+      // Default redirect behavior
+      return url.startsWith(baseUrl) ? url : baseUrl;
     },
   },
   pages: {
     signIn: "/auth/login",
     error: "/auth/error",
+    newUser: "/auth/continue",
   },
   secret: process.env.NEXTAUTH_SECRET,
 };
