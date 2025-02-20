@@ -62,7 +62,7 @@ const Navbar = () => {
             </DropdownMenuItem>
             {session.user?.role === "HOST" && (
               <DropdownMenuItem asChild>
-                <Link href="/host/dashboard" className="w-full">
+                <Link href="/dashboard/host" className="w-full">
                   Host Dashboard
                 </Link>
               </DropdownMenuItem>

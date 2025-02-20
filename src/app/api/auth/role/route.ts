@@ -8,7 +8,7 @@ export async function POST(req: Request) {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.email) {
-      return new NextResponse("Unauthorized", { status: 401 });
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     const { role } = await req.json();
@@ -17,12 +17,12 @@ export async function POST(req: Request) {
       return new NextResponse("Invalid role", { status: 400 });
     }
 
-    const updatedUser = await prisma.user.update({
+    const user = await prisma.user.update({
       where: { email: session.user.email },
       data: { role },
     });
 
-    return NextResponse.json(updatedUser);
+    return NextResponse.json({ user }, { status: 200 });
   } catch (error) {
     console.error("Error updating role:", error);
     return new NextResponse("Internal error", { status: 500 });

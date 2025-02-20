@@ -4,17 +4,19 @@ import { SessionProvider, useSession } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 import React, { PropsWithChildren, useEffect } from "react";
 import { Loader2 } from "lucide-react";
+import { ToastContainer } from "react-toastify";
 
 const DashProviders = ({ children }: PropsWithChildren) => {
   return (
     <SessionProvider basePath="/api/auth">
       <SessionLoaderProvider>{children}</SessionLoaderProvider>
+      <ToastContainer />
     </SessionProvider>
   );
 };
 
 const SessionLoaderProvider = ({ children }: PropsWithChildren) => {
-  const {status } = useSession();
+  const { status, data: session } = useSession();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -24,7 +26,7 @@ const SessionLoaderProvider = ({ children }: PropsWithChildren) => {
     }
   }, [status, pathname, router]);
 
-  if (status === "loading") {
+  if (status === "loading" && !session) {
     return (
       <div className="flex items-center justify-center h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />

@@ -1,12 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { Loader2 } from "lucide-react";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,23 +17,20 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-
-const profileSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Invalid email address"),
-  role: z.enum(["RENTER", "HOST"], {
-    required_error: "Please select a role",
-  }),
-});
+import { profileSchema } from "@/lib/schema";
 
 type ProfileForm = z.infer<typeof profileSchema>;
 
 export default function ProfilePage() {
   const { data: session, update } = useSession();
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
@@ -46,28 +42,28 @@ export default function ProfilePage() {
   });
 
   async function onSubmit(data: ProfileForm) {
-    try {
-      setIsLoading(true);
-      const response = await fetch("/api/user/update", {
-        method: "POST",
+    await toast.promise(
+      fetch("/api/user", {
+        method: "PUT",
         body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to update profile");
+      }).then(async (response) => {
+        if (!response.ok) throw new Error("Failed to update profile");
+        await update()
+      }),
+      {
+        pending: "Updating profile...",
+        success: "Profile updated successfully! 🎉",
+        error: "Failed to update profile. Please try again.",
+      },
+      {
+        position: "bottom-right",
       }
-
-      await update();
-      router.refresh();
-    } catch (error) {
-      console.error("Error updating profile:", error);
-    } finally {
-      setIsLoading(false);
-    }
+    );
   }
 
   return (
     <div className="container mx-auto max-w-md p-6">
+      <ToastContainer />
       <Card>
         <CardHeader>
           <CardTitle>Update Profile</CardTitle>
@@ -107,6 +103,7 @@ export default function ProfilePage() {
                   </FormItem>
                 )}
               />
+
               <FormField
                 control={form.control}
                 name="role"
@@ -119,7 +116,7 @@ export default function ProfilePage() {
                         defaultValue={field.value}
                       >
                         <SelectTrigger className="w-[180px]">
-                          <SelectValue placeholder="Select a fruit" />
+                          <SelectValue placeholder="Select a role" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="RENTER">Renter</SelectItem>
@@ -132,12 +129,8 @@ export default function ProfilePage() {
                 )}
               />
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  "Save Changes"
-                )}
+              <Button type="submit" className="w-full">
+                Save Changes
               </Button>
             </form>
           </Form>
