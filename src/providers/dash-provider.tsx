@@ -5,11 +5,16 @@ import { usePathname, useRouter } from "next/navigation";
 import React, { PropsWithChildren, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { ToastContainer } from "react-toastify";
+import { QueryClient, QueryClientProvider } from "react-query";
+
+const queryClient = new QueryClient();
 
 const DashProviders = ({ children }: PropsWithChildren) => {
   return (
     <SessionProvider basePath="/api/auth">
-      <SessionLoaderProvider>{children}</SessionLoaderProvider>
+      <QueryClientProvider client={queryClient}>
+        <SessionLoaderProvider>{children}</SessionLoaderProvider>
+      </QueryClientProvider>
       <ToastContainer />
     </SessionProvider>
   );
@@ -22,7 +27,7 @@ const SessionLoaderProvider = ({ children }: PropsWithChildren) => {
 
   useEffect(() => {
     if (status === "unauthenticated" && pathname.startsWith("/dashboard")) {
-      router.replace("/auth/login");
+      router.replace(`/auth/login`);
     }
   }, [status, pathname, router]);
 
