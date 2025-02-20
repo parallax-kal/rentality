@@ -9,11 +9,12 @@ export default function SignInForm() {
 
   const handleGoogleSignIn = async () => {
     try {
+      setIsLoading(true);
       await signIn("google", { callbackUrl: "/" });
     } catch (error) {
       console.error("Error signing in with Google:", error);
     } finally {
-      setIsLoading(false);  
+      setIsLoading(false);
     }
   };
 

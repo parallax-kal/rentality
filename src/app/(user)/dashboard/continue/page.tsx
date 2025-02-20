@@ -1,17 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { Loader2 } from "lucide-react";
-                                                                                                                                                                                                            
+import { ArrowRight, Building2, Home, Loader2 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -22,120 +23,151 @@ import {
   FormItem,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Select, SelectItem } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { cn } from "@/lib/utils";
 
-const profileSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Invalid email address"),
+const roleSchema = z.object({
   role: z.enum(["RENTER", "HOST"], {
     required_error: "Please select a role",
   }),
 });
 
-type ProfileForm = z.infer<typeof profileSchema>;
+type RoleForm = z.infer<typeof roleSchema>;
 
-export default function ProfilePage() {
-  const { data: session, update } = useSession();
+export default function ContinuePage() {
   const router = useRouter();
+  const { update } = useSession();
   const [isLoading, setIsLoading] = useState(false);
 
-  const form = useForm<ProfileForm>({
-    resolver: zodResolver(profileSchema),
-    defaultValues: {
-      name: session?.user?.name || "",
-      email: session?.user?.email || "",
-      role: session?.user?.role || "RENTER",
-    },
+  const form = useForm<RoleForm>({
+    resolver: zodResolver(roleSchema),
   });
 
-  async function onSubmit(data: ProfileForm) {
+  async function onSubmit(data: RoleForm) {
     try {
       setIsLoading(true);
-      const response = await fetch("/api/user/update", {
+      const response = await fetch("/api/auth/role", {
         method: "POST",
-        body: JSON.stringify(data),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: data.role }),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to update profile");
+        throw new Error("Failed to update role");
       }
 
       await update();
-      router.refresh();
+      router.push(data.role === "HOST" ? "/host/dashboard" : "/");
     } catch (error) {
-      console.error("Error updating profile:", error);
+      console.error("Error updating role:", error);
     } finally {
       setIsLoading(false);
     }
   }
 
+  const roles = [
+    {
+      id: "RENTER",
+      title: "I want to rent properties",
+      description: "Browse and book properties listed by hosts",
+      icon: Home,
+    },
+    {
+      id: "HOST",
+      title: "I want to list my properties",
+      description: "List your properties and manage bookings",
+      icon: Building2,
+    },
+  ];
+
   return (
-    <div className="container mx-auto max-w-md p-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Update Profile</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <Label>Name</Label>
-                    <FormControl>
-                      <Input placeholder="Your name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <Label>Email</Label>
-                    <FormControl>
-                      <Input type="email" placeholder="Your email" {...field} disabled />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="role"
-                render={({ field }) => (
-                  <FormItem>
-                    <Label>Role</Label>
-                    <FormControl>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <SelectItem value="RENTER">Renter</SelectItem>
-                        <SelectItem value="HOST">Host</SelectItem>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  "Save Changes"
-                )}
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+    <div className="container relative min-h-screen flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-2 lg:px-0">
+      <div className="relative z-10 hidden h-full flex-col bg-muted p-10 text-white lg:flex dark:border-r">
+        <div className="relative z-20 mt-auto">
+          <blockquote className="space-y-2">
+            <p className="text-lg">
+              Join our community of renters and hosts to experience hassle-free
+              property rentals.
+            </p>
+            <footer className="text-sm">Welcome aboard</footer>
+          </blockquote>
+        </div>
+      </div>
+      <div className="lg:p-8">
+        <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px] lg:w-[400px]">
+          <Card className="border-0 shadow-none lg:border lg:shadow-sm">
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-2xl font-bold">
+                Choose your role
+              </CardTitle>
+              <CardDescription>
+                Select how you&apos;d like to use RentHub
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...form}>
+                <form
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className="space-y-4"
+                >
+                  <FormField
+                    control={form.control}
+                    name="role"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            className="grid gap-4"
+                          >
+                            {roles.map((role) => (
+                              <label
+                                key={role.id}
+                                htmlFor={role.id}
+                                className={cn(
+                                  "flex cursor-pointer items-start space-x-4 rounded-lg border p-4 hover:bg-muted",
+                                  field.value === role.id && "border-primary"
+                                )}
+                              >
+                                <RadioGroupItem
+                                  id={role.id}
+                                  value={role.id}
+                                  className="mt-1"
+                                />
+                                <div className="flex-1 space-y-1">
+                                  <div className="flex items-center">
+                                    <role.icon className="mr-2 h-5 w-5" />
+                                    <p className="font-medium leading-none">
+                                      {role.title}
+                                    </p>
+                                  </div>
+                                  <p className="text-sm text-muted-foreground">
+                                    {role.description}
+                                  </p>
+                                </div>
+                              </label>
+                            ))}
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <ArrowRight className="mr-2 h-4 w-4" />
+                    )}
+                    Continue
+                  </Button>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }

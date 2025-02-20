@@ -13,15 +13,14 @@ model Account {
     type              String
     provider          String
     providerAccountId String  @map("provider_account_id")
-    refresh_token     String? @db.Text
-    access_token      String? @db.Text
+    refresh_token     String?
+    access_token      String?
     expires_at        Int?
     token_type        String?
     scope             String?
-    id_token          String? @db.Text
+    id_token          String?
     session_state     String?
-
-    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+    user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
     @@unique([provider, providerAccountId])
     @@map("accounts")
@@ -34,45 +33,42 @@ model Session {
     expires      DateTime
     createdAt    DateTime @default(now())
     updatedAt    DateTime @updatedAt
-
-    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+    user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
     @@map("sessions")
 }
 
 model User {
-    id            String    @id @default(uuid())
+    id            String     @id @default(uuid())
     name          String
-    email         String    @unique
+    email         String     @unique
     emailVerified DateTime?
     image         String?
     role          UserRole?
-    createdAt     DateTime  @default(now())
-    updatedAt     DateTime  @updatedAt
-
-    properties Property[]
-    bookings   Booking[]
-    reviews    Review[]
-    accounts   Account[]
-    sessions   Session[]
+    createdAt     DateTime   @default(now())
+    updatedAt     DateTime   @updatedAt
+    accounts      Account[]
+    bookings      Booking[]
+    properties    Property[]
+    reviews       Review[]
+    sessions      Session[]
 
     @@map("users")
 }
 
 model Property {
-    id            String   @id @default(uuid())
+    id            String    @id @default(uuid())
     title         String
     description   String
-    pricePerNight Float    @map("price_per_night")
+    pricePerNight Float     @map("price_per_night")
     location      String
     userId        String
-    host          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-    rating        Float    @default(0.0)
-    createdAt     DateTime @default(now())
-    updatedAt     DateTime @updatedAt
-
-    bookings Booking[]
-    reviews  Review[]
+    rating        Float     @default(0.0)
+    createdAt     DateTime  @default(now())
+    updatedAt     DateTime  @updatedAt
+    bookings      Booking[]
+    host          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+    reviews       Review[]
 
     @@map("properties")
 }
@@ -85,9 +81,8 @@ model Booking {
     checkOutDate DateTime      @map("checkout_date")
     status       BookingStatus
     createdAt    DateTime      @default(now())
-
-    renter   User     @relation(fields: [renterId], references: [id], onDelete: Cascade)
-    property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+    property     Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+    renter       User          @relation(fields: [renterId], references: [id], onDelete: Cascade)
 
     @@map("bookings")
 }
@@ -99,9 +94,8 @@ model Review {
     rating     Int
     comment    String
     createdAt  DateTime @default(now())
-
-    property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-    renter   User     @relation(fields: [renterId], references: [id], onDelete: Cascade)
+    property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+    renter     User     @relation(fields: [renterId], references: [id], onDelete: Cascade)
 
     @@map("reviews")
 }

@@ -27,9 +27,12 @@ const SessionLoaderProvider = ({ children }: PropsWithChildren) => {
 
   useEffect(() => {
     if (status === "unauthenticated" && pathname.startsWith("/dashboard")) {
-      router.replace(`/auth/login`);
+      return router.push("/auth/login");
     }
-  }, [status, pathname, router]);
+    if (status === "authenticated" && !session?.user.role) {
+      router.push("/dashboard/continue");
+    }
+  }, [status, pathname, router, session]);
 
   if (status === "loading" && !session) {
     return (

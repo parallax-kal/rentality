@@ -99,7 +99,7 @@ const Navbar = () => {
   return (
     <div
       className={cn(
-        "flex items-center px-4 sm:px-8 lg:px-16 py-2 lg:py-3 justify-between border-b fixed top-0 w-screen z-50 transition-all max-w-[110rem] left-1/2 -translate-x-1/2",
+        "flex items-center z-50 px-4 sm:px-8 lg:px-16 py-2 lg:py-3 justify-between border-b fixed top-0 w-screen bg-background transition-all max-w-[110rem] left-1/2 -translate-x-1/2",
         {
           "bg-clip-padding backdrop-filter backdrop-blur-2xl bg-opacity-70 shadow-sm":
             scrolled,

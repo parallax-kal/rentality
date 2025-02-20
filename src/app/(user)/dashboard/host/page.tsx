@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { toast } from "react-toastify";
 import { Loader2, Plus } from "lucide-react";
-import PropertyForm from "@/components/PropertyForm";
+import PropertyForm from "@/components/forms/PropertyForm";
 
 export default function HostDashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);

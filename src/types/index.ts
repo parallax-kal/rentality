@@ -6,12 +6,17 @@ export interface User {
   image?: string;
 }
 
+export interface Location {
+  lat: number;
+  long: number;
+}
+
 export interface Property {
   id: string;
   title: string;
   description: string;
   pricePerNight: number;
-  location: string;
+  location: Location;
   hostId: string;
   host: User;
   bookings?: Booking[];

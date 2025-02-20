@@ -59,6 +59,7 @@ const PropertyFormComponent = () => {
           placeId: placePredictions[0].place_id,
         },
         (placeDetails) => {
+          const lat = (placeDetails?.geometry?.location?.lat())
           setLocation(placeDetails.formatted_address); // Update location with the selected address
         }
       );
@@ -87,11 +88,6 @@ const PropertyFormComponent = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleLocationSearch = (input: string) => {
-    getPlacePredictions({ input });
-    setLocation(input); // Update location as the user types
   };
 
   return (
