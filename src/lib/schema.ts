@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { zfd } from "zod-form-data";
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -13,5 +16,11 @@ export const propertySchema = z.object({
   description: z.string().min(10, "Description must be at least 10 characters"),
   price: z.number().min(1, "Price must be at least $1"),
   location: z.string().min(5, "Please select a valid location"),
-  image: z.string().url("Please provide a valid image URL").optional(),
+  longitude: z.number(),
+  latitude: z.number(),
+  media: zfd.repeatable(
+    z.instanceof(File).refine((file) => file.size <= MAX_FILE_SIZE, {
+      message: "Each file must be 10MB or less",
+    })
+  ),
 });

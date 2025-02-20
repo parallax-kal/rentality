@@ -48,7 +48,7 @@ export default function HostDashboard() {
         <h1 className="text-2xl font-bold">Your Properties</h1>
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
           <DialogTrigger asChild>
-            <Button variant="primary">
+            <Button variant="secondary">
               <Plus className="mr-2 h-5 w-5" />
               Add Property
             </Button>
