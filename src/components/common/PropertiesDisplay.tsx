@@ -35,6 +35,7 @@ import {
 import { isPicture } from "@/lib/utils";
 import Image from "next/image";
 import { Rating } from "react-simple-star-rating";
+import toast from "react-hot-toast";
 
 const PropertiesDisplay = ({ owned = false }: { owned?: boolean }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -112,20 +113,29 @@ const PropertiesDisplay = ({ owned = false }: { owned?: boolean }) => {
   };
 
   const handleDeleteProperty = async (propertyId: string) => {
-    try {
-      const res = await fetch(`/api/properties/${propertyId}`, {
+    toast.promise(
+      fetch(`/api/properties/${propertyId}`, {
         method: "DELETE",
-      });
-
-      if (res.ok) {
-        queryClient.invalidateQueries({ queryKey: ["hostProperties"] });
-        setSelectedProperty(undefined);
-      } else {
-        throw new Error("Failed to delete property");
+      })
+        .then((response) => response.json())
+        .then((result) => {
+          if (!result.success) {
+            throw new Error(result.error || "Something went wrong");
+          }
+          queryClient.invalidateQueries({ queryKey: ["hostProperties"] });
+          setSelectedProperty(undefined);
+        }),
+      {
+        loading: "Deleting property",
+        error: (error) =>
+          error?.response?.data?.message ?? "Error deleting property.",
+        success: () => {
+          queryClient.invalidateQueries({ queryKey: ["hostProperties"] });
+          setSelectedProperty(undefined);
+          return "Property deleted successfully.";
+        },
       }
-    } catch (error) {
-      console.error("Error deleting property:", error);
-    }
+    );
   };
   return (
     <div className="container mx-auto p-6">
