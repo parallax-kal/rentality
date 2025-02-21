@@ -41,14 +41,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../ui/dialog";
+import Image from "next/image";
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 
-type PropertyForm = z.infer<typeof propertySchema>;
-
-const PropertyFormComponent = () => {
-  const [isLoading, setIsLoading] = useState(false);
-
+const PropertyFormComponent = ({
+  onSubmit,
+}: {
+  onSubmit: (values: z.infer<typeof propertySchema>) => void;
+}) => {
   // Use usePlacesService hook to fetch place predictions
   const { placesService, placePredictions, getPlacePredictions } =
     usePlacesService({
@@ -57,7 +58,7 @@ const PropertyFormComponent = () => {
 
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [previewFile, setPreviewFile] = useState<File | null>(null);
-  const form = useForm<PropertyForm>({
+  const form = useForm<z.infer<typeof propertySchema>>({
     resolver: zodResolver(propertySchema),
     defaultValues: {
       title: "",
@@ -106,50 +107,6 @@ const PropertyFormComponent = () => {
     const updatedFiles = uploadedFiles.filter((_, i) => i !== index);
     setUploadedFiles(updatedFiles);
     form.setValue("media", updatedFiles);
-  };
-
-  const onSubmit = async (data: PropertyForm) => {
-    try {
-      setIsLoading(true);
-      const formData = new FormData();
-
-      // Add text fields
-      formData.append("title", data.title);
-      formData.append("description", data.description);
-      formData.append("price", data.price);
-      formData.append("location", data.location);
-
-      // Add coordinates if available
-      if (data.longitude)
-        formData.append("longitude", data.longitude.toString());
-      if (data.latitude) formData.append("latitude", data.latitude.toString());
-
-      // Add media files
-      if (data.media && data.media.length > 0) {
-        data.media.forEach((file) => {
-          formData.append("media", file);
-        });
-      }
-
-      const response = await fetch("/api/properties", {
-        method: "POST",
-        body: formData,
-      });
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Something went wrong");
-      }
-
-      // Handle successful submission
-      
-      form.reset();
-      setUploadedFiles([]);
-    } catch (error) {
-      console.error("Error submitting form:", error);
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   return (
@@ -288,10 +245,12 @@ const PropertyFormComponent = () => {
                         className="relative w-24 h-24"
                       >
                         {file.type.startsWith("image/") ? (
-                          <img
+                          <Image
                             src={URL.createObjectURL(file)}
                             alt={`Preview ${index}`}
-                            className="w-full h-full object-cover rounded"
+                            layout="fill"
+                            objectFit="cover"
+                            className="rounded"
                           />
                         ) : (
                           <video
@@ -317,8 +276,8 @@ const PropertyFormComponent = () => {
             )}
           />
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "Submitting..." : "Add Property"}
+          <Button type="submit" className="w-full">
+            Add Property
           </Button>
         </form>
       </Form>
@@ -331,10 +290,12 @@ const PropertyFormComponent = () => {
           <div className="flex justify-center">
             {previewFile &&
               (previewFile.type.startsWith("image/") ? (
-                <img
+                <Image
                   src={URL.createObjectURL(previewFile)}
                   alt="Preview"
-                  className="max-w-full max-h-[80vh] rounded"
+                  height={0}
+                  width={0}
+                  className="!max-w-full !w-auto !h-[80vh] rounded"
                 />
               ) : (
                 <video

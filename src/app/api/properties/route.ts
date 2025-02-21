@@ -10,49 +10,48 @@ import { authOptions } from "../auth/[...nextauth]/route";
 const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
 
 export const GET = async (req: Request) => {
-    try {
-      const { searchParams } = new URL(req.url);
-      const page = parseInt(searchParams.get("page") ?? "1", 10);
-      const limit = parseInt(searchParams.get("limit") ?? "10", 10);
-      const ownedByUser = searchParams.get("ownedByUser") === "true";
+  try {
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get("page") ?? "1", 10);
+    const limit = parseInt(searchParams.get("limit") ?? "10", 10);
+    const ownedByUser = searchParams.get("ownedByUser") === "true";
 
-      const session = await getServerSession(authOptions);
-      const userId = session?.user?.id;
-  
-      const skip = (page - 1) * limit;
-  
-      const properties = await prisma.property.findMany({
-        where: ownedByUser && userId ? { userId } : {}, 
-        skip,
-        take: limit,
-        include: {
-          _count: {
-            select: { bookings: true },
-          },
+    const session = await getServerSession(authOptions);
+    const userId = session?.user?.id;
+
+    const skip = (page - 1) * limit;
+
+    const properties = await prisma.property.findMany({
+      where: ownedByUser && userId ? { userId } : {},
+      skip,
+      take: limit,
+      include: {
+        _count: {
+          select: { bookings: true },
         },
-      });
-  
-      const totalProperties = await prisma.property.count({
-        where: ownedByUser && userId ? { userId } : {},
-      });
-  
-      return NextResponse.json(
-        { 
-          properties,
-          totalPages: Math.ceil(totalProperties / limit),
-          currentPage: page
-        }, 
-        { status: 200 }
-      );
-    } catch (error) {
-      console.error("Error fetching properties:", error);
-      return NextResponse.json(
-        { error: "Internal server error", details: (error as Error).message },
-        { status: 500 }
-      );
-    }
-  };
-  
+      },
+    });
+
+    const totalProperties = await prisma.property.count({
+      where: ownedByUser && userId ? { userId } : {},
+    });
+
+    return NextResponse.json(
+      {
+        properties,
+        totalPages: Math.ceil(totalProperties / limit),
+        currentPage: page,
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("Error fetching properties:", error);
+    return NextResponse.json(
+      { error: "Internal server error", details: (error as Error).message },
+      { status: 500 }
+    );
+  }
+};
 
 export async function POST(req: NextRequest) {
   try {
