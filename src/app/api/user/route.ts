@@ -1,10 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { authOptions } from "../auth/[...nextauth]/route";
 import { profileSchema } from "@/lib/schema";
 import { getServerSession } from "next-auth";
 import prisma from "@/lib/prisma";
 
-export const PUT = async (req: Request) => {
+export const PUT = async (req: NextRequest) => {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {

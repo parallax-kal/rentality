@@ -12,16 +12,18 @@ export interface Location {
 }
 
 export interface Property {
-  id: string;
   title: string;
   description: string;
+  location: string;
+  longitude: number;
+  latitude: number;
+  id: string;
   pricePerNight: number;
-  location: Location;
-  hostId: string;
-  host: User;
-  bookings?: Booking[];
+  userId: string;
+  rating: number;
   createdAt: Date;
   updatedAt: Date;
+  mediaUrls: string[];
 }
 
 export interface Booking {

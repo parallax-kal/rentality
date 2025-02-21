@@ -62,11 +62,12 @@ const PropertyFormComponent = () => {
     defaultValues: {
       title: "",
       description: "",
-      price: 0,
+      price: "1",
       location: "",
       media: undefined,
     },
   });
+
   useEffect(() => {
     // Fetch place details for the first place prediction when predictions are available
     if (placePredictions.length) {
@@ -86,7 +87,7 @@ const PropertyFormComponent = () => {
         }
       );
     }
-  }, [placePredictions, placesService]);
+  }, [placePredictions, placesService, form]);
 
   const { getRootProps, getInputProps } = useDropzone({
     accept: { "image/*": [], "video/*": [] },
@@ -107,12 +108,43 @@ const PropertyFormComponent = () => {
     form.setValue("media", updatedFiles);
   };
 
-  // Handle form submission
   const onSubmit = async (data: PropertyForm) => {
     try {
       setIsLoading(true);
+      const formData = new FormData();
 
-      console.log(data); // You can make an API call here to save the property
+      // Add text fields
+      formData.append("title", data.title);
+      formData.append("description", data.description);
+      formData.append("price", data.price);
+      formData.append("location", data.location);
+
+      // Add coordinates if available
+      if (data.longitude)
+        formData.append("longitude", data.longitude.toString());
+      if (data.latitude) formData.append("latitude", data.latitude.toString());
+
+      // Add media files
+      if (data.media && data.media.length > 0) {
+        data.media.forEach((file) => {
+          formData.append("media", file);
+        });
+      }
+
+      const response = await fetch("/api/properties", {
+        method: "POST",
+        body: formData,
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Something went wrong");
+      }
+
+      // Handle successful submission
+      
+      form.reset();
+      setUploadedFiles([]);
     } catch (error) {
       console.error("Error submitting form:", error);
     } finally {
@@ -189,7 +221,9 @@ const PropertyFormComponent = () => {
                       <Command>
                         <CommandInput
                           placeholder="Search location..."
-                          onChangeCapture={(e) => {
+                          onChangeCapture={(
+                            e: React.ChangeEvent<HTMLInputElement>
+                          ) => {
                             getPlacePredictions({ input: e.target.value });
                           }}
                         />
@@ -248,7 +282,9 @@ const PropertyFormComponent = () => {
                     {uploadedFiles.map((file, index) => (
                       <div
                         key={index}
-                        onClick={() => setPreviewFile(file)}
+                        onClick={() => {
+                          setPreviewFile(file);
+                        }}
                         className="relative w-24 h-24"
                       >
                         {file.type.startsWith("image/") ? (
@@ -265,7 +301,10 @@ const PropertyFormComponent = () => {
                         )}
                         <button
                           type="button"
-                          onClick={() => removeFile(index)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeFile(index);
+                          }}
                           className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 text-xs"
                         >
                           X
@@ -287,14 +326,7 @@ const PropertyFormComponent = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Preview</DialogTitle>
-            <DialogClose asChild>
-              <button
-                className="absolute top-2 right-2 bg-gray-200 rounded-full p-1"
-                onClick={() => setPreviewFile(null)}
-              >
-                ✕
-              </button>
-            </DialogClose>
+            <DialogClose />
           </DialogHeader>
           <div className="flex justify-center">
             {previewFile &&

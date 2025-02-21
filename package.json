@@ -38,6 +38,7 @@
     "react-toastify": "^11.0.3",
     "tailwind-merge": "^3.0.1",
     "tailwindcss-animate": "^1.0.7",
+    "uuidv4": "^6.2.13",
     "zod": "^3.24.2",
     "zod-form-data": "^2.0.5"
   },

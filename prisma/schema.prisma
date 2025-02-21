@@ -62,11 +62,13 @@ model Property {
     description   String
     pricePerNight Float     @map("price_per_night")
     location      String
+    latitude      Float
+    longitude     Float
     userId        String
     rating        Float     @default(0.0)
     createdAt     DateTime  @default(now())
     updatedAt     DateTime  @updatedAt
-    images        String[]
+    mediaUrls     String[]
     bookings      Booking[]
     host          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
     reviews       Review[]

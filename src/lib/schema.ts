@@ -13,14 +13,16 @@ export const profileSchema = z.object({
 
 export const propertySchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
-  description: z.string().min(10, "Description must be at least 10 characters"),
-  price: z.number().min(1, "Price must be at least $1"),
-  location: z.string().min(5, "Please select a valid location"),
+  description: z.string().min(5, "Description must be at least 5 characters"),
+  price: z.string().regex(/^(?!0(\.0+)?$)(\d+(\.\d+)?|\.\d+)$|^([1-9]\d*)$/, {
+    message: "Price must be a number greater than or equal to 1",
+  }),
+  location: z.string().min(3, "Location must be at least 3 characters."),
   longitude: z.number(),
   latitude: z.number(),
-  media: zfd.repeatable(
-    z.instanceof(File).refine((file) => file.size <= MAX_FILE_SIZE, {
-      message: "Each file must be 10MB or less",
+  media: z.array(
+    zfd.file().refine((file) => file.size < MAX_FILE_SIZE, {
+      message: "File can't be bigger than 1MB.",
     })
   ),
 });
