@@ -59,7 +59,7 @@ export const GET = async (req: Request) => {
     } else {
       orderBy[sortBy] = sortOrder;
     }
-    
+
     // Fetch properties with filters, pagination, and sorting
     const properties = await prisma.property.findMany({
       where: whereCondition,
@@ -75,6 +75,7 @@ export const GET = async (req: Request) => {
             id: true,
             rating: true,
             comment: true,
+            renter: true,
           },
         },
       },
@@ -190,9 +191,178 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ success: true, property }, { status: 201 });
+    return NextResponse.json(
+      { message: "Property added successfully.", property },
+      { status: 201 }
+    );
   } catch (error) {
     console.error("Error processing property submission:", error);
+    return NextResponse.json(
+      { message: "Internal server error", details: (error as Error).message },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(req: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (session?.user?.role !== "HOST") {
+      return NextResponse.json(
+        { message: "You're not authorized to do this." },
+        { status: 401 }
+      );
+    }
+
+    const searchParams = new URL(req.url).searchParams;
+    const id = searchParams.get("id");
+
+    const propertyId = id as string;
+
+    const property = await prisma.property.findUnique({
+      where: { id: propertyId },
+    });
+
+    if (!property) {
+      return NextResponse.json(
+        { message: "Property not found" },
+        { status: 404 }
+      );
+    }
+
+    const formData = await req.formData();
+
+    const textFields = {
+      title: formData.get("title") as string,
+      description: formData.get("description") as string,
+      price: formData.get("price") as string,
+      location: formData.get("location") as string,
+      longitude: parseFloat(formData.get("longitude") as string),
+      latitude: parseFloat(formData.get("latitude") as string),
+      media: formData.getAll("media"),
+    };
+
+    const safeData = propertySchema.safeParse(textFields);
+
+    if (!safeData.success) {
+      return NextResponse.json(
+        {
+          mesasgae: "Validation error",
+          details: safeData.error.errors
+            .map((error) => error.message)
+            .join(", "),
+        },
+        { status: 400 }
+      );
+    }
+
+    const mediaFiles = formData.getAll("media") as File[];
+    const mediaUrls: string[] = [];
+
+    if (mediaFiles.length > 0) {
+      const uploadDir = path.join(process.cwd(), "public/properties");
+      const propertyDir = path.join(uploadDir, propertyId);
+
+      if (!existsSync(uploadDir)) {
+        await mkdir(uploadDir, { recursive: true });
+      }
+
+      if (!existsSync(propertyDir)) {
+        await mkdir(propertyDir, { recursive: true });
+      }
+
+      for (const file of mediaFiles) {
+        const fileExtension = file.name.split(".").pop() || "";
+        const fileName = `${uuidv4()}.${fileExtension}`;
+        const filePath = path.join(propertyDir, fileName);
+
+        const arrayBuffer = await file.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        await writeFile(filePath, buffer);
+
+        const relativePath = filePath.replace(
+          path.join(process.cwd(), "public"),
+          ""
+        );
+
+        const fileUrl = `${BASE_URL}${relativePath}`;
+        mediaUrls.push(fileUrl);
+      }
+    }
+
+    const updatedProperty = await prisma.property.update({
+      where: { id: propertyId },
+      data: {
+        title: safeData.data.title,
+        description: safeData.data.description,
+        pricePerNight: parseFloat(safeData.data.price),
+        location: safeData.data.location,
+        longitude: safeData.data.longitude,
+        latitude: safeData.data.latitude,
+        mediaUrls: mediaUrls,
+      },
+    });
+
+    return NextResponse.json({
+      message: "Property updated successfully.",
+      property: updatedProperty,
+    });
+  } catch (error) {
+    console.error("Error updating property:", error);
+    return NextResponse.json(
+      { message: "Internal server error", details: (error as Error).message },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (session?.user?.role !== "HOST") {
+      return NextResponse.json(
+        { message: "You're not authorized to do this." },
+        { status: 401 }
+      );
+    }
+
+    const searchParams = new URL(req.url).searchParams;
+    const id = searchParams.get("id");
+
+    const propertyId = id as string;
+
+    const property = await prisma.property.findUnique({
+      where: { id: propertyId },
+    });
+
+    if (!property) {
+      return NextResponse.json(
+        { message: "Property not found" },
+        { status: 404 }
+      );
+    }
+
+    if (property.userId !== session.user.id) {
+      return NextResponse.json(
+        { message: "You're not authorized to do this." },
+        { status: 401 }
+      );
+    }
+
+    await prisma.property.delete({
+      where: { id: propertyId },
+    });
+
+    return NextResponse.json(
+      { message: "Property deleted successfully." },
+      {
+        status: 200,
+      }
+    );
+  } catch (error) {
+    console.error("Error deleting property:", error);
     return NextResponse.json(
       { message: "Internal server error", details: (error as Error).message },
       { status: 500 }

@@ -25,6 +25,16 @@ import { useSession } from "next-auth/react";
 
 import { Property } from "@/types";
 import PaginationContainer from "@/components/common/Pagination";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "../ui/carousel";
+import { isPicture } from "@/lib/utils";
+import Image from "next/image";
+import { Rating } from "react-simple-star-rating";
 
 const PropertiesDisplay = ({ owned = false }: { owned?: boolean }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -303,14 +313,36 @@ const PropertiesDisplay = ({ owned = false }: { owned?: boolean }) => {
             </DialogHeader>
 
             <div className="mt-2">
-              <div className="rounded-md overflow-hidden mb-4 h-64">
-                <img
-                  src={selectedProperty.mediaUrls[0]}
-                  alt={selectedProperty.title}
-                  className="w-full h-full object-cover"
-                />
-              </div>
+              {/* Property Media Carousel */}
+              <Carousel className="h-96">
+                <CarouselContent className="h-96">
+                  {selectedProperty.mediaUrls.map((url) => {
+                    const isVideo = !isPicture(url);
+                    return (
+                      <CarouselItem key={url} className="h-96">
+                        {isVideo ? (
+                          <video
+                            src={url}
+                            className="w-full h-96 object-cover"
+                            controls
+                          />
+                        ) : (
+                          <Image
+                            src={url}
+                            alt={selectedProperty.title}
+                            fill
+                            className="w-full h-96 object-cover"
+                          />
+                        )}
+                      </CarouselItem>
+                    );
+                  })}
+                  <CarouselNext />
+                  <CarouselPrevious />
+                </CarouselContent>
+              </Carousel>
 
+              {/* Property Details */}
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
                   <p className="text-sm text-gray-500">Location</p>
@@ -346,12 +378,47 @@ const PropertiesDisplay = ({ owned = false }: { owned?: boolean }) => {
                 {selectedProperty.description}
               </p>
 
+              {/* Reviews Section */}
+              <div className="mt-6">
+                <h3 className="text-lg font-semibold">Reviews</h3>
+                {selectedProperty.reviews.length > 0 ? (
+                  <div className="space-y-4 mt-4">
+                    {selectedProperty.reviews.map((review) => (
+                      <div key={review.id} className="flex gap-4 border-b pb-3">
+                        {/* Renter Image */}
+                        <Image
+                          src={review.renter.image}
+                          alt={review.renter.name}
+                          width={40}
+                          height={40}
+                          className="rounded-full object-cover"
+                        />
+
+                        {/* Review Content */}
+                        <div className="flex-1">
+                          <p className="font-medium">{review.renter.name}</p>
+                          <Rating
+                            initialValue={review.rating}
+                            readonly
+                            size={20}
+                          />
+                          <p className="text-gray-700 mt-1">{review.comment}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 mt-2">No reviews yet.</p>
+                )}
+              </div>
+
+              {/* Action Buttons */}
               {session?.user?.id === selectedProperty.userId ? (
                 <div className="flex gap-4 mt-4">
                   <Button
                     variant="outline"
                     onClick={() => {
-                      /* Handle Edit - Navigate to edit page or open edit modal */
+                      /* Handle Edit */
                     }}
                     className="flex-1"
                   >

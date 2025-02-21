@@ -1,11 +1,21 @@
-import { Review } from "@prisma/client";
+
 
 export interface User {
   id: string;
   email: string;
   name: string;
   role: "RENTER" | "HOST";
-  image?: string;
+  image: string;
+}
+
+export interface Review {
+  id: string;
+  comment: string;
+  rating: number;
+  renter: User;
+  propertyId: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Property {
