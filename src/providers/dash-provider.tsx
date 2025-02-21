@@ -29,10 +29,7 @@ const SessionLoaderProvider = ({ children }: PropsWithChildren) => {
     if (status === "unauthenticated" && pathname.startsWith("/dashboard")) {
       return router.push("/auth/login");
     }
-    if (status === "authenticated" && !session?.user.role) {
-      router.push("/dashboard/continue");
-    }
-  }, [status, pathname, router, session]);
+  }, [status, pathname, router]);
 
   if (status === "loading" && !session) {
     return (

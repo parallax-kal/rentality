@@ -1,3 +1,5 @@
+import { Review } from "@prisma/client";
+
 export interface User {
   id: string;
   email: string;
@@ -22,8 +24,8 @@ export interface Property {
   mediaUrls: string[];
   _count: {
     bookings: number;
-    reviews: number;
   };
+  reviews: Review[];
 }
 
 export interface Booking {

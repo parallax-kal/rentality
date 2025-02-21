@@ -9,6 +9,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/route";
 
 const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
+
 export const GET = async (req: Request) => {
   try {
     const { searchParams } = new URL(req.url);
@@ -50,8 +51,15 @@ export const GET = async (req: Request) => {
     // Dynamic orderBy construction based on sortBy and sortOrder
     const orderBy: Record<string, unknown> = {};
 
-    orderBy[sortBy] = sortOrder;
-
+    if (sortBy === "bookings" || sortBy === "reviews") {
+      // Sort by average rating if sortBy is 'rating'
+      orderBy[sortBy] = {
+        _count: sortOrder,
+      };
+    } else {
+      orderBy[sortBy] = sortOrder;
+    }
+    
     // Fetch properties with filters, pagination, and sorting
     const properties = await prisma.property.findMany({
       where: whereCondition,
@@ -60,7 +68,14 @@ export const GET = async (req: Request) => {
       orderBy,
       include: {
         _count: {
-          select: { bookings: true },
+          select: { bookings: true, reviews: true },
+        },
+        reviews: {
+          select: {
+            id: true,
+            rating: true,
+            comment: true,
+          },
         },
       },
     });

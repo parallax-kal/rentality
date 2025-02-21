@@ -1,9 +1,14 @@
-import React from 'react'
+import PropertiesDisplay from "@/components/common/PropertiesDisplay";
+import { Metadata } from "next";
+import React from "react";
+
+export const metadata: Metadata = {
+  title: "Rentals",
+  description: "Rentals page",
+};
 
 const RentalsPage = () => {
-  return (
-    <div>RentalsPage</div>
-  )
-}
+  return <PropertiesDisplay />;
+};
 
-export default RentalsPage
+export default RentalsPage;

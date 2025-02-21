@@ -3,7 +3,10 @@ import "./globals.css";
 import { ThemeProvider } from "@/providers/theme-provider";
 
 export const metadata: Metadata = {
-  title: "Rentality",
+  title: {
+    default: "Rentality",
+    template: "Rentality | %s",
+  },
   description: "Rentality",
 };
 
