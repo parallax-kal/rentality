@@ -65,6 +65,7 @@ model Property {
     latitude      Float
     longitude     Float
     userId        String
+    rating        Float     @default(0.0)
     createdAt     DateTime  @default(now())
     updatedAt     DateTime  @updatedAt
     mediaUrls     String[]

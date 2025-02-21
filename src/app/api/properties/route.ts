@@ -7,79 +7,88 @@ import { existsSync } from "fs";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/route";
-const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
 
+const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
 export const GET = async (req: Request) => {
   try {
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get("page") ?? "1", 10);
     const limit = parseInt(searchParams.get("limit") ?? "10", 10);
     const ownedByUser = searchParams.get("ownedByUser") === "true";
+    const sortBy = searchParams.get("sortBy") || "createdAt"; // Default sorting by 'createdAt'
+    const sortOrder = searchParams.get("sortOrder") === "asc" ? "asc" : "desc"; // Default order is 'desc'
+    const search = searchParams.get("search")?.toLowerCase() || "";
+    const bookingStatus = searchParams.get("bookingStatus");
 
     const session = await getServerSession(authOptions);
     const userId = session?.user?.id;
-
     const skip = (page - 1) * limit;
 
+    const whereCondition: Record<string, unknown> = {};
+
+    // Filter for properties owned by the logged-in user
+    if (ownedByUser && userId) {
+      whereCondition.userId = userId;
+    }
+
+    // Search filter for title, description, and location
+    if (search) {
+      whereCondition.OR = [
+        { title: { contains: search, mode: "insensitive" } },
+        { description: { contains: search, mode: "insensitive" } },
+        { location: { contains: search, mode: "insensitive" } },
+      ];
+    }
+
+    // Booking status filter (booked or not booked)
+    if (bookingStatus === "booked") {
+      whereCondition.bookings = { some: {} };
+    } else if (bookingStatus === "notBooked") {
+      whereCondition.bookings = { none: {} };
+    }
+
+    // Dynamic orderBy construction based on sortBy and sortOrder
+    const orderBy: Record<string, unknown> = {};
+
+    orderBy[sortBy] = sortOrder;
+
+    // Fetch properties with filters, pagination, and sorting
     const properties = await prisma.property.findMany({
-      where: ownedByUser && userId ? { userId } : {},
+      where: whereCondition,
       skip,
       take: limit,
+      orderBy,
       include: {
         _count: {
           select: { bookings: true },
         },
-        reviews: {
-          select: {
-            rating: true,
-          },
-        },
-        bookings: {
-          select: {
-            createdAt: true,
-          },
-          orderBy: {
-            createdAt: "desc",
-          },
-          take: 1,
-        },
       },
     });
 
-    const propertiesWithRatings = properties.map((property) => {
-      const totalRatings = property.reviews.length;
-      const avgRating =
-        totalRatings > 0
-          ? (
-              property.reviews.reduce((sum, r) => sum + r.rating, 0) /
-              totalRatings
-            ).toFixed(1)
-          : "0";
-
-      return {
-        ...property,
-        rating: parseFloat(avgRating),
-        lastBookedAt:
-          property.bookings.length > 0 ? property.bookings[0].createdAt : null,
-      };
-    });
-
+    // Count total properties to calculate pagination
     const totalProperties = await prisma.property.count({
-      where: ownedByUser && userId ? { userId } : {},
+      where: whereCondition,
     });
 
     return NextResponse.json(
       {
-        properties: propertiesWithRatings,
+        properties,
         totalPages: Math.ceil(totalProperties / limit),
         currentPage: page,
+        totalResults: totalProperties,
+        bookingStatus,
+        sortBy,
+        sortOrder,
       },
       { status: 200 }
     );
   } catch (error) {
     console.error("Error fetching properties:", error);
     return NextResponse.json(
-      { message: "Internal server error", details: (error as Error).message },
+      {
+        message: "Internal server error",
+        details: (error as Error).message,
+      },
       { status: 500 }
     );
   }

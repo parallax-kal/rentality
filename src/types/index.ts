@@ -22,6 +22,7 @@ export interface Property {
   mediaUrls: string[];
   _count: {
     bookings: number;
+    reviews: number;
   };
 }
 

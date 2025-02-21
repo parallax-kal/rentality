@@ -34,11 +34,11 @@ const PropertyCard: React.FC<{ property: Property }> = ({ property }) => {
 
   return (
     <div className="border rounded-lg overflow-hidden shadow-md transition-transform hover:shadow-lg hover:scale-[1.01]">
-      <div className="relative h-64">
+      <div className="relative h-44">
         <img
           src={property.mediaUrls[currentImageIndex]}
           alt={`${property.title} - image ${currentImageIndex + 1}`}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-top object-cover"
         />
 
         {property.mediaUrls.length > 1 && (
@@ -120,7 +120,7 @@ const PropertyCard: React.FC<{ property: Property }> = ({ property }) => {
         <div className="pt-1 mt-1 border-t text-xs text-gray-500 flex justify-between">
           <div className="flex items-center">
             <Calendar size={14} className="mr-1" />
-            <span>
+            <span >
               Listed on {new Date(property.createdAt).toLocaleDateString()}
             </span>
           </div>
