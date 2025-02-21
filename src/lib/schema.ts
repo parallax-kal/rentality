@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { zfd } from "zod-form-data";
+import { BookingStatus } from "@prisma/client";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -25,4 +26,16 @@ export const propertySchema = z.object({
       message: "File can't be bigger than 1MB.",
     })
   ),
+});
+
+export const renterBookingSchema = z.object({
+  checkInDate: z.coerce.date(),
+  checkOutDate: z.coerce.date(),
+});
+
+export const hostBookingUpdateSchema = z.object({
+  bookingId: z.string().min(1, "Booking ID is required"),
+  status: z.nativeEnum(BookingStatus, {
+    errorMap: () => ({ message: "Invalid status. Use CONFIRMED or CANCELED" }),
+  }),
 });

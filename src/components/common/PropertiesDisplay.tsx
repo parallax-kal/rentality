@@ -490,7 +490,7 @@ const PropertiesDisplay = ({ owned = false }: { owned?: boolean }) => {
               >
                 <Copy className="h-4 w-4" /> Share Link
               </Button>
-              {session?.user?.id === selectedProperty.userId ? (
+              {(session?.user?.id === selectedProperty.userId && session?.user?.role === "HOST")  ? (
                 <div className="flex gap-4 mt-4">
                   <Button
                     variant="outline"

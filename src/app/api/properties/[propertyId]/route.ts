@@ -11,7 +11,7 @@ import { BASE_URL } from "@/lib/utils";
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { propertyId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -23,15 +23,15 @@ export async function PUT(
       );
     }
 
-    const propertyId = params.id as string;
+    const propertyId = params.propertyId as string;
 
     const property = await prisma.property.findUnique({
-      where: { id: propertyId },
+      where: { id: propertyId, userId: session.user.id },
     });
 
     if (!property) {
       return NextResponse.json(
-        { message: "Property not found" },
+        { message: "Property not found or you're not the owner." },
         { status: 404 }
       );
     }
@@ -97,7 +97,7 @@ export async function PUT(
     }
 
     const updatedProperty = await prisma.property.update({
-      where: { id: propertyId },
+      where: { id: propertyId, userId: session.user.id },
       data: {
         title: safeData.data.title,
         description: safeData.data.description,
@@ -123,8 +123,8 @@ export async function PUT(
 }
 
 export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { id: string } }
+  _: NextRequest,
+  { params }: { params: { propertyId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -136,15 +136,15 @@ export async function DELETE(
       );
     }
 
-    const propertyId = params.id as string;
+    const propertyId = params.propertyId as string;
 
     const property = await prisma.property.findUnique({
-      where: { id: propertyId },
+      where: { id: propertyId, userId: session.user.id },
     });
 
     if (!property) {
       return NextResponse.json(
-        { message: "Property not found" },
+        { message: "Property not found or you're not the owner." },
         { status: 404 }
       );
     }
@@ -168,7 +168,9 @@ export async function DELETE(
       }
     }
 
-    await prisma.property.delete({ where: { id: propertyId } });
+    await prisma.property.delete({
+      where: { id: propertyId, userId: session.user.id },
+    });
 
     return NextResponse.json(
       { message: "Property deleted successfully.", success: true },
