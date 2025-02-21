@@ -8,7 +8,6 @@ import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/route";
 import { BASE_URL } from "@/lib/utils";
-
 export const GET = async (req: Request) => {
   try {
     const { searchParams } = new URL(req.url);
@@ -19,6 +18,7 @@ export const GET = async (req: Request) => {
     const sortOrder = searchParams.get("sortOrder") === "asc" ? "asc" : "desc"; // Default order is 'desc'
     const search = searchParams.get("search")?.toLowerCase() || "";
     const bookingStatus = searchParams.get("bookingStatus");
+    const id = searchParams.get("id");
 
     const session = await getServerSession(authOptions);
     const userId = session?.user?.id;
@@ -26,32 +26,31 @@ export const GET = async (req: Request) => {
 
     const whereCondition: Record<string, unknown> = {};
 
-    // Filter for properties owned by the logged-in user
-    if (ownedByUser && userId) {
-      whereCondition.userId = userId;
+    if (id) {
+      whereCondition.id = id;
+    } else {
+      if (ownedByUser && userId) {
+        whereCondition.userId = userId;
+      }
+
+      if (search) {
+        whereCondition.OR = [
+          { title: { contains: search, mode: "insensitive" } },
+          { description: { contains: search, mode: "insensitive" } },
+          { location: { contains: search, mode: "insensitive" } },
+        ];
+      }
+
+      if (bookingStatus === "booked") {
+        whereCondition.bookings = { some: {} };
+      } else if (bookingStatus === "notBooked") {
+        whereCondition.bookings = { none: {} };
+      }
     }
 
-    // Search filter for title, description, and location
-    if (search) {
-      whereCondition.OR = [
-        { title: { contains: search, mode: "insensitive" } },
-        { description: { contains: search, mode: "insensitive" } },
-        { location: { contains: search, mode: "insensitive" } },
-      ];
-    }
-
-    // Booking status filter (booked or not booked)
-    if (bookingStatus === "booked") {
-      whereCondition.bookings = { some: {} };
-    } else if (bookingStatus === "notBooked") {
-      whereCondition.bookings = { none: {} };
-    }
-
-    // Dynamic orderBy construction based on sortBy and sortOrder
     const orderBy: Record<string, unknown> = {};
 
     if (sortBy === "bookings" || sortBy === "reviews") {
-      // Sort by average rating if sortBy is 'rating'
       orderBy[sortBy] = {
         _count: sortOrder,
       };
@@ -59,7 +58,6 @@ export const GET = async (req: Request) => {
       orderBy[sortBy] = sortOrder;
     }
 
-    // Fetch properties with filters, pagination, and sorting
     const properties = await prisma.property.findMany({
       where: whereCondition,
       skip,
@@ -80,7 +78,6 @@ export const GET = async (req: Request) => {
       },
     });
 
-    // Count total properties to calculate pagination
     const totalProperties = await prisma.property.count({
       where: whereCondition,
     });
@@ -137,7 +134,7 @@ export async function POST(req: NextRequest) {
     if (!safeData.success) {
       return NextResponse.json(
         {
-          mesasgae: "Validation error",
+          message: "Validation error",
           details: safeData.error.errors
             .map((error) => error.message)
             .join(", "),
@@ -191,7 +188,7 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json(
-      { message: "Property added successfully.", property },
+      { message: "Property added successfully.", success: true, property },
       { status: 201 }
     );
   } catch (error) {
@@ -202,5 +199,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-
-

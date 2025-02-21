@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
+import { RecoilRoot } from "recoil";
 
 export function ThemeProvider({
   children,
@@ -9,7 +10,7 @@ export function ThemeProvider({
 }: React.ComponentProps<typeof NextThemesProvider>) {
   return (
     <NextThemesProvider {...props}>
-      {children}
+      <RecoilRoot>{children}</RecoilRoot>
     </NextThemesProvider>
   );
 }

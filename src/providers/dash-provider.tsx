@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 import { SessionProvider, useSession } from "next-auth/react";
@@ -6,6 +7,8 @@ import React, { PropsWithChildren, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { Toaster } from "react-hot-toast";
 import { QueryClient, QueryClientProvider } from "react-query";
+import { useRecoilState } from "recoil";
+import { redirectAtom } from "@/lib/atom";
 
 const queryClient = new QueryClient();
 
@@ -24,9 +27,18 @@ const SessionLoaderProvider = ({ children }: PropsWithChildren) => {
   const { status, data: session } = useSession();
   const pathname = usePathname();
   const router = useRouter();
+  const [redirect, setRedirect] = useRecoilState(redirectAtom);
+
+  useEffect(() => {
+    if (redirect) {
+      router.push(redirect);
+      setRedirect(undefined);
+    }
+  }, [redirect]);
 
   useEffect(() => {
     if (status === "unauthenticated" && pathname.startsWith("/dashboard")) {
+      setRedirect(pathname);
       return router.push("/auth/login");
     }
   }, [status, pathname, router]);

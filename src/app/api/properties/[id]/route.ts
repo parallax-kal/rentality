@@ -171,7 +171,7 @@ export async function DELETE(
     await prisma.property.delete({ where: { id: propertyId } });
 
     return NextResponse.json(
-      { message: "Property deleted successfully." },
+      { message: "Property deleted successfully.", success: true },
       {
         status: 200,
       }
