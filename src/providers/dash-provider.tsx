@@ -4,7 +4,7 @@ import { SessionProvider, useSession } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 import React, { PropsWithChildren, useEffect } from "react";
 import { Loader2 } from "lucide-react";
-import { ToastContainer } from "react-toastify";
+import { Toaster } from "react-hot-toast";
 import { QueryClient, QueryClientProvider } from "react-query";
 
 const queryClient = new QueryClient();
@@ -15,7 +15,7 @@ const DashProviders = ({ children }: PropsWithChildren) => {
       <QueryClientProvider client={queryClient}>
         <SessionLoaderProvider>{children}</SessionLoaderProvider>
       </QueryClientProvider>
-      <ToastContainer />
+      <Toaster />
     </SessionProvider>
   );
 };

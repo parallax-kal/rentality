@@ -18,7 +18,7 @@ import { propertySchema } from "@/lib/schema"; // Correct path to your schema
 import usePlacesService from "react-google-autocomplete/lib/usePlacesAutocompleteService"; // Import the hook for place prediction
 import z from "zod";
 import * as React from "react";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Command,
@@ -42,19 +42,19 @@ import {
   DialogTitle,
 } from "../ui/dialog";
 import Image from "next/image";
+import { toast } from "react-hot-toast";
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 
-const PropertyFormComponent = ({
-  onSubmit,
-}: {
-  onSubmit: (values: z.infer<typeof propertySchema>) => void;
-}) => {
-  // Use usePlacesService hook to fetch place predictions
-  const { placesService, placePredictions, getPlacePredictions } =
-    usePlacesService({
-      apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
-    });
+const PropertyFormComponent = ({ closeModal }: { closeModal: () => void }) => {
+  const {
+    placesService,
+    placePredictions,
+    getPlacePredictions,
+    isPlacePredictionsLoading,
+  } = usePlacesService({
+    apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
+  });
 
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [previewFile, setPreviewFile] = useState<File | null>(null);
@@ -68,6 +68,54 @@ const PropertyFormComponent = ({
       media: undefined,
     },
   });
+
+  const onSubmit = async (data: z.infer<typeof propertySchema>) => {
+    const formData = new FormData();
+
+    // Add text fields
+    formData.append("title", data.title);
+    formData.append("description", data.description);
+    formData.append("price", data.price);
+    formData.append("location", data.location);
+
+    // Add coordinates if available
+    if (data.longitude) formData.append("longitude", data.longitude.toString());
+    if (data.latitude) formData.append("latitude", data.latitude.toString());
+
+    // Add media files
+    if (data.media && data.media.length > 0) {
+      data.media.forEach((file) => {
+        formData.append("media", file);
+      });
+    }
+
+    toast.promise(
+      fetch("/api/properties", {
+        method: "POST",
+        body: formData,
+      })
+        .then((response) => response.json())
+        .then((result) => {
+          if (!result.success) {
+            throw new Error(result.error || "Something went wrong");
+          }
+
+          form.reset();
+          setUploadedFiles([]);
+          closeModal();
+        })
+        .catch((error) => {
+          console.error("Error submitting form:", error);
+          throw error;
+        }),
+      {
+        loading: "Submitting property...",
+        success: "Property submitted successfully! 🎉",
+        error: (error) =>
+          error?.response?.data?.message ?? "Error submitting property",
+      }
+    );
+  };
 
   useEffect(() => {
     // Fetch place details for the first place prediction when predictions are available
@@ -185,28 +233,36 @@ const PropertyFormComponent = ({
                           }}
                         />
                         <CommandList>
-                          <CommandEmpty>No location found.</CommandEmpty>
-                          <CommandGroup>
-                            {placePredictions.map((prediction) => (
-                              <CommandItem
-                                key={prediction.place_id}
-                                value={prediction.description}
-                                onSelect={(currentValue) => {
-                                  field.onChange(currentValue);
-                                }}
-                              >
-                                <Check
-                                  className={cn(
-                                    "mr-2 h-4 w-4",
-                                    field.value === prediction.description
-                                      ? "opacity-100"
-                                      : "opacity-0"
-                                  )}
-                                />
-                                {prediction.description}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
+                          {isPlacePredictionsLoading ? (
+                            <div className="min-h-10 flex items-center justify-center">
+                              <Loader2 className="animate-spin h-8 w-8" />
+                            </div>
+                          ) : (
+                            <>
+                              <CommandEmpty>No location found.</CommandEmpty>
+                              <CommandGroup>
+                                {placePredictions.map((prediction) => (
+                                  <CommandItem
+                                    key={prediction.place_id}
+                                    value={prediction.description}
+                                    onSelect={(currentValue) => {
+                                      field.onChange(currentValue);
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4",
+                                        field.value === prediction.description
+                                          ? "opacity-100"
+                                          : "opacity-0"
+                                      )}
+                                    />
+                                    {prediction.description}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </>
+                          )}
                         </CommandList>
                       </Command>
                     </PopoverContent>

@@ -99,46 +99,51 @@ const Navbar = () => {
   return (
     <div
       className={cn(
-        "flex items-center z-50 px-4 sm:px-8 lg:px-16 py-2 lg:py-3 justify-between border-b fixed top-0 w-screen bg-background transition-all max-w-[110rem] left-1/2 -translate-x-1/2",
+        "z-50 px-4 sm:px-8 lg:px-16 py-2 lg:py-3 border-b fixed top-0 w-screen bg-background transition-all left-1/2 -translate-x-1/2",
         {
           "bg-clip-padding backdrop-filter backdrop-blur-2xl bg-opacity-70 shadow-sm":
             scrolled,
         }
       )}
     >
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild className="md:hidden">
-          <Button variant="ghost" size="icon">
-            <Menu className="h-6 w-6" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-48 mt-2">
+      <div className="max-w-[80rem] mx-auto flex items-center justify-between">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild className="md:hidden">
+            <Button variant="ghost" size="icon">
+              <Menu className="h-6 w-6" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-48 mt-2">
+            {navs.map((nav) => (
+              <DropdownMenuItem key={nav.name}>
+                <Link href={nav.href} className="w-full">
+                  {nav.name}
+                </Link>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <Logo />
+
+        <nav className="hidden md:flex items-center gap-6">
           {navs.map((nav) => (
-            <DropdownMenuItem key={nav.name}>
-              <Link href={nav.href} className="w-full">
-                {nav.name}
-              </Link>
-            </DropdownMenuItem>
+            <Link
+              key={nav.name}
+              href={nav.href}
+              className={cn(
+                "font-medium text-muted-foreground hover:text-primary transition-colors",
+                {
+                  "text-primary font-semibold": pathname === nav.href,
+                }
+              )}
+            >
+              {nav.name}
+            </Link>
           ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
-      <Logo />
+        </nav>
 
-      <nav className="hidden md:flex items-center gap-6">
-        {navs.map((nav) => (
-          <Link
-            key={nav.name}
-            href={nav.href}
-            className={cn("font-medium text-muted-foreground hover:text-primary transition-colors", {
-              "text-primary font-semibold": pathname === nav.href
-            })}
-          >
-            {nav.name}
-          </Link>
-        ))}
-      </nav>
-
-      <AuthButtons />
+        <AuthButtons />
+      </div>
     </div>
   );
 };

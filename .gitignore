@@ -20,7 +20,8 @@
 # production
 /build
 .env*
-migrations
+/prisma/migrations
+/public/properties
 
 # misc
 .DS_Store

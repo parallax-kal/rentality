@@ -4,8 +4,7 @@ import { useSession } from "next-auth/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-hot-toast";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,7 +41,7 @@ export default function ProfilePage() {
   });
 
   async function onSubmit(data: ProfileForm) {
-    await toast.promise(
+     toast.promise(
       fetch("/api/user", {
         method: "PUT",
         body: JSON.stringify(data),
@@ -51,9 +50,9 @@ export default function ProfilePage() {
         await update()
       }),
       {
-        pending: "Updating profile...",
+        loading: "Updating profile...",
         success: "Profile updated successfully! 🎉",
-        error: "Failed to update profile. Please try again.",
+        error: (error) => error.response.data.message ?? "Failed to update profile. Please try again.",
       },
       {
         position: "bottom-right",
@@ -63,7 +62,6 @@ export default function ProfilePage() {
 
   return (
     <div className="container mx-auto max-w-md p-6">
-      <ToastContainer />
       <Card>
         <CardHeader>
           <CardTitle>Update Profile</CardTitle>

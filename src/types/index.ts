@@ -6,24 +6,23 @@ export interface User {
   image?: string;
 }
 
-export interface Location {
-  lat: number;
-  long: number;
-}
-
 export interface Property {
+  id: string;
   title: string;
   description: string;
-  location: string;
-  longitude: number;
-  latitude: number;
-  id: string;
   pricePerNight: number;
+  location: string;
+  latitude: number;
+  longitude: number;
   userId: string;
   rating: number;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
+  lastBookedAt: string;
   mediaUrls: string[];
+  _count: {
+    bookings: number;
+  };
 }
 
 export interface Booking {

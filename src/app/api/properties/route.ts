@@ -29,7 +29,39 @@ export const GET = async (req: Request) => {
         _count: {
           select: { bookings: true },
         },
+        reviews: {
+          select: {
+            rating: true,
+          },
+        },
+        bookings: {
+          select: {
+            createdAt: true,
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+          take: 1,
+        },
       },
+    });
+
+    const propertiesWithRatings = properties.map((property) => {
+      const totalRatings = property.reviews.length;
+      const avgRating =
+        totalRatings > 0
+          ? (
+              property.reviews.reduce((sum, r) => sum + r.rating, 0) /
+              totalRatings
+            ).toFixed(1)
+          : "0";
+
+      return {
+        ...property,
+        rating: parseFloat(avgRating),
+        lastBookedAt:
+          property.bookings.length > 0 ? property.bookings[0].createdAt : null,
+      };
     });
 
     const totalProperties = await prisma.property.count({
@@ -38,7 +70,7 @@ export const GET = async (req: Request) => {
 
     return NextResponse.json(
       {
-        properties,
+        properties: propertiesWithRatings,
         totalPages: Math.ceil(totalProperties / limit),
         currentPage: page,
       },
@@ -47,7 +79,7 @@ export const GET = async (req: Request) => {
   } catch (error) {
     console.error("Error fetching properties:", error);
     return NextResponse.json(
-      { error: "Internal server error", details: (error as Error).message },
+      { message: "Internal server error", details: (error as Error).message },
       { status: 500 }
     );
   }
@@ -80,7 +112,12 @@ export async function POST(req: NextRequest) {
 
     if (!safeData.success) {
       return NextResponse.json(
-        { error: "Validation error", details: safeData.error.format() },
+        {
+          mesasgae: "Validation error",
+          details: safeData.error.errors
+            .map((error) => error.message)
+            .join(", "),
+        },
         { status: 400 }
       );
     }
@@ -133,7 +170,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("Error processing property submission:", error);
     return NextResponse.json(
-      { error: "Internal server error", details: (error as Error).message },
+      { message: "Internal server error", details: (error as Error).message },
       { status: 500 }
     );
   }
