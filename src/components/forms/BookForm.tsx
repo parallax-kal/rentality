@@ -83,10 +83,11 @@ const BookForm = ({
     const propertyId = property.id;
     if (!session?.user) {
       toast.error("You need to be logged in to book a property.");
-      setRedirect(`/rentals?id=${propertyId}`);
+      setRedirect(`/rentals/${propertyId}`);
       router.push("/auth/login");
       return;
     }
+
     toast.promise(
       fetch(
         `/api/properties/${propertyId}/bookings`,

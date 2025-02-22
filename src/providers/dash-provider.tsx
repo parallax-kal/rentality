@@ -30,11 +30,11 @@ const SessionLoaderProvider = ({ children }: PropsWithChildren) => {
   const [redirect, setRedirect] = useRecoilState(redirectAtom);
 
   useEffect(() => {
-    if (redirect) {
+    if (redirect && status === "authenticated") {
       router.push(redirect);
       setRedirect(undefined);
     }
-  }, [redirect]);
+  }, [redirect, status]);
 
   useEffect(() => {
     if (status === "unauthenticated" && pathname.startsWith("/dashboard")) {

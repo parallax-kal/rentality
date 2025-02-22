@@ -186,3 +186,72 @@ export async function DELETE(
     );
   }
 }
+
+export async function GET(
+  _: NextRequest,
+  { params }: { params: { propertyId: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    const searchParams = new URLSearchParams(params);
+
+    const ownedByUser = searchParams.get("ownedByUser") === "true";
+    let property;
+    if (session?.user?.role === "HOST" && ownedByUser) {
+      property = await prisma.property.findUnique({
+        where: { id: params.propertyId, userId: session.user.id },
+        include: {
+          reviews: true,
+          _count: {
+            select: { bookings: true },
+          },
+          bookings: {
+            include: {
+              renter: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  image: true,
+                },
+              },
+            },
+          },
+        },
+      });
+    } else {
+      property = await prisma.property.findUnique({
+        where: { id: params.propertyId },
+        include: {
+          reviews: true,
+          host: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              image: true,
+            },
+          },
+          _count: {
+            select: { bookings: true },
+          },
+        },
+      });
+    }
+
+    if (!property) {
+      return NextResponse.json(
+        { message: "Property not found." },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ property }, { status: 200 });
+  } catch (error) {
+    console.error("Error fetching property:", error);
+    return NextResponse.json(
+      { message: "Internal server error", details: (error as Error).message },
+      { status: 500 }
+    );
+  }
+}

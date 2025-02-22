@@ -88,7 +88,6 @@ const PropertyCard: React.FC<{ property: Property }> = ({ property }) => {
               readonly
               size={20}
               fillColor="#FFA534"
-              emptyClassName="!flex"
               emptyColor="#D1D5DB"
             />
           </div>

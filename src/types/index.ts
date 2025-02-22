@@ -31,6 +31,7 @@ export interface Property {
   createdAt: string;
   updatedAt: string;
   lastBookedAt: string;
+  host: User;
   mediaUrls: string[];
   _count: {
     bookings: number;

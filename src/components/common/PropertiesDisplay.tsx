@@ -18,42 +18,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Loader2,
-  Plus,
-  ChevronUp,
-  ChevronDown,
-  ChevronRight,
-  ChevronLeft,
-  Copy,
-} from "lucide-react";
+import { Loader2, Plus, ChevronUp, ChevronDown } from "lucide-react";
 import PropertyForm from "@/components/forms/PropertyForm";
 import PropertyCard from "@/components/common/PropertyCard";
-import { useSession } from "next-auth/react";
 
 import { Property } from "@/types";
 import PaginationContainer from "@/components/common/Pagination";
-import { isPicture } from "@/lib/utils";
-import Image from "next/image";
-import { Rating } from "react-simple-star-rating";
-import toast from "react-hot-toast";
-import { useRouter, useSearchParams } from "next/navigation";
-import BookForm from "../forms/BookForm";
+import Link from "next/link";
 
 const PropertiesDisplay = ({ owned = false }: { owned?: boolean }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedProperty, setSelectedProperty] = useState<Property>();
   const queryClient = useQueryClient();
-  const { data: session } = useSession();
   const [page, setPage] = useState(1);
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortOrder, setSortOrder] = useState("desc");
   const [search, setSearch] = useState("");
   const [bookingStatus, setBookingStatus] = useState("");
   const limit = 12;
-
-  const searchParams = useSearchParams();
-  const idQuery = searchParams.get("id");
 
   const sortOptions = [
     { value: "createdAt", label: "Date Added" },
@@ -84,7 +65,6 @@ const PropertiesDisplay = ({ owned = false }: { owned?: boolean }) => {
       sortOrder,
       search,
       bookingStatus,
-      idQuery,
     ],
     queryFn: async () => {
       const queryParams = new URLSearchParams({
@@ -94,10 +74,6 @@ const PropertiesDisplay = ({ owned = false }: { owned?: boolean }) => {
         sortOrder,
         ownedByUser: owned ? "true" : "false",
       });
-
-      if (idQuery) {
-        queryParams.append("id", idQuery);
-      }
 
       if (bookingStatus) {
         queryParams.append("bookingStatus", bookingStatus);
@@ -109,86 +85,17 @@ const PropertiesDisplay = ({ owned = false }: { owned?: boolean }) => {
       if (!res.ok) throw new Error("Failed to fetch properties");
       return res.json();
     },
-    onSuccess: (data) => {
-      if (idQuery && data.properties.length === 1) {
-        setSelectedProperty(data.properties[0]);
-      }
-    },
   });
 
   const properties: Property[] = data?.properties || [];
   const totalPages = data?.totalPages || 1;
 
   const clearFilters = () => {
-    if (idQuery) {
-      router.replace(owned ? "/dashboard/properties" : "/rentals");
-      return;
-    }
     setSortBy("createdAt");
     setSortOrder("desc");
     setBookingStatus("");
     setSearch("");
     setPage(1);
-  };
-
-  const handleDeleteProperty = async (propertyId: string) => {
-    toast.promise(
-      fetch(`/api/properties/${propertyId}`, {
-        method: "DELETE",
-      })
-        .then((response) => response.json())
-        .then((result) => {
-          if (!result.success) {
-            throw new Error(result.error || "Something went wrong");
-          }
-          queryClient.invalidateQueries({ queryKey: ["hostProperties"] });
-          setSelectedProperty(undefined);
-        }),
-      {
-        loading: "Deleting property",
-        error: (error) =>
-          error?.response?.data?.message ?? "Error deleting property.",
-        success: () => {
-          queryClient.invalidateQueries({ queryKey: ["hostProperties"] });
-          setSelectedProperty(undefined);
-          return "Property deleted successfully.";
-        },
-      }
-    );
-  };
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const router = useRouter();
-  const nextImage = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!selectedProperty) {
-      return;
-    }
-    if (selectedProperty.mediaUrls.length > 1) {
-      setCurrentImageIndex((prev) =>
-        prev === selectedProperty.mediaUrls.length - 1 ? 0 : prev + 1
-      );
-    }
-  };
-
-  const prevImage = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!selectedProperty) {
-      return;
-    }
-    if (selectedProperty.mediaUrls.length > 1) {
-      setCurrentImageIndex((prev) =>
-        prev === 0 ? selectedProperty.mediaUrls.length - 1 : prev - 1
-      );
-    }
-  };
-
-  const handleCopyLink = () => {
-    if (!selectedProperty) return;
-    const propertyLink = `${window.location.origin}/rentals?id=${selectedProperty.id}`;
-    navigator.clipboard.writeText(propertyLink);
-    toast.success("Property link copied to clipboard!", {
-      position: "bottom-right",
-    });
   };
 
   return (
@@ -281,8 +188,7 @@ const PropertiesDisplay = ({ owned = false }: { owned?: boolean }) => {
           {(sortBy !== "createdAt" ||
             sortOrder !== "desc" ||
             search ||
-            bookingStatus ||
-            idQuery) && (
+            bookingStatus) && (
             <Button
               variant="ghost"
               size="sm"
@@ -339,13 +245,13 @@ const PropertiesDisplay = ({ owned = false }: { owned?: boolean }) => {
       ) : (
         <div className="grid min-h-[35rem] xs:grid-cols-2 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
           {properties.map((property) => (
-            <div
+            <Link
+              href={`/rentals/${property.id}?owned=${owned}`}
               key={property.id}
-              onClick={() => setSelectedProperty(property)}
               className="cursor-pointer"
             >
               <PropertyCard property={property} />
-            </div>
+            </Link>
           ))}
         </div>
       )}
@@ -356,182 +262,6 @@ const PropertiesDisplay = ({ owned = false }: { owned?: boolean }) => {
           totalPages={totalPages}
           setPage={setPage}
         />
-      )}
-
-      {selectedProperty && (
-        <Dialog
-          open={!!selectedProperty}
-          onOpenChange={(open) => !open && setSelectedProperty(undefined)}
-        >
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle className="text-xl">
-                {selectedProperty.title}
-              </DialogTitle>
-            </DialogHeader>
-
-            <div className="mt-2">
-              <div className="relative h-96">
-                {isPicture(selectedProperty.mediaUrls[currentImageIndex]) ? (
-                  <Image
-                    src={selectedProperty.mediaUrls[currentImageIndex]}
-                    alt={`${selectedProperty.title} - image ${
-                      currentImageIndex + 1
-                    }`}
-                    fill
-                    className="w-full rounded-md h-full object-top object-cover"
-                  />
-                ) : (
-                  <video
-                    src={selectedProperty.mediaUrls[currentImageIndex]}
-                    controls
-                    className="rounded-md"
-                  />
-                )}
-
-                {selectedProperty.mediaUrls.length > 1 && (
-                  <>
-                    <button
-                      onClick={prevImage}
-                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 text-white p-1 rounded-full hover:bg-black/70"
-                      aria-label="Previous image"
-                    >
-                      <ChevronLeft size={20} />
-                    </button>
-                    <Button
-                      onClick={nextImage}
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 text-white p-1 rounded-full hover:bg-black/70"
-                      aria-label="Next image"
-                    >
-                      <ChevronRight size={20} />
-                    </Button>
-
-                    <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-md">
-                      {currentImageIndex + 1}/
-                      {selectedProperty.mediaUrls.length}
-                    </div>
-                  </>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                  <p className="text-sm text-gray-500">Location</p>
-                  <p className="font-medium">{selectedProperty.location}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Price</p>
-                  <p className="font-medium">
-                    {selectedProperty.pricePerNight.toLocaleString()} RWF/night
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Total Bookings</p>
-                  <p className="font-medium">
-                    {selectedProperty._count.bookings || 0}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Rating</p>
-                  <p className="font-medium">
-                    {selectedProperty.rating?.toFixed(1) || "No ratings yet"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Reviews</p>
-                  <p className="font-medium">
-                    {selectedProperty.reviews.length || 0}
-                  </p>
-                </div>
-              </div>
-
-              <p className="text-gray-700 mb-6">
-                {selectedProperty.description}
-              </p>
-
-              <div className="mt-6">
-                <h3 className="text-lg font-semibold">Reviews</h3>
-                {selectedProperty.reviews.length > 0 ? (
-                  <div className="space-y-4 mt-4">
-                    {selectedProperty.reviews.map((review) => (
-                      <div key={review.id} className="flex gap-4 border-b pb-3">
-                        <Image
-                          src={review.renter.image}
-                          alt={review.renter.name}
-                          width={40}
-                          height={40}
-                          className="rounded-full object-cover"
-                        />
-
-                        <div className="flex-1">
-                          <p className="font-medium">{review.renter.name}</p>
-                          <Rating
-                            initialValue={review.rating}
-                            readonly
-                            size={20}
-                          />
-                          <p className="text-gray-700 mt-1">{review.comment}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 mt-2">No reviews yet.</p>
-                )}
-              </div>
-              <Button
-                onClick={handleCopyLink}
-                className="flex items-center mt-3 gap-2"
-                variant="secondary"
-              >
-                <Copy className="h-4 w-4" /> Share Link
-              </Button>
-              {session?.user?.id === selectedProperty.userId &&
-              session?.user?.role === "HOST" ? (
-                <div className="flex gap-4 mt-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      /* Handle Edit */
-                    }}
-                    className="flex-1"
-                  >
-                    Edit Property
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    onClick={() => handleDeleteProperty(selectedProperty.id)}
-                    className="flex-1"
-                  >
-                    Delete Property
-                  </Button>
-                </div>
-              ) : (
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button className="w-full mt-4">Book Now</Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Book Property</DialogTitle>
-                    </DialogHeader>
-                    <BookForm
-                      property={selectedProperty}
-                      onBook={() => {
-                        queryClient.invalidateQueries({
-                          queryKey: ["hostProperties"],
-                        });
-                        setSelectedProperty(undefined);
-                      }}
-                    />
-                  </DialogContent>
-                </Dialog>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
       )}
     </div>
   );
