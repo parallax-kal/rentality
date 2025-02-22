@@ -57,7 +57,7 @@ export default function ContinuePage() {
       }
 
       await update();
-      router.push(data.role === "HOST" ? "/host/dashboard" : "/");
+      router.push(data.role === "HOST" ? "//dashboard/host" : "/");
     } catch (error) {
       console.error("Error updating role:", error);
     } finally {
