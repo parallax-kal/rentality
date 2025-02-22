@@ -1,12 +1,12 @@
 import { Landing } from "@/components/home/Landing";
 import HomeCarousel from "@/components/home/HomeCarousel";
 import Testimonies from "@/components/home/Testimonies";
-import { BackgroundBeams } from "@/components/ui/background-beams";
+import FeaturedLocations from "@/components/home/FeaturedLocation";
+import { RentGlobe } from "@/components/home/RentGlobe";
 
 export default function Home() {
   return (
     <div>
-      <BackgroundBeams />
       <Landing />
       <div className="bg-gray-100 dark:bg-neutral-950 py-4 px-1">
         <div className="max-w-[80rem] xl:px-0 px-12 overflow-x-hidden mx-auto">
@@ -46,6 +46,8 @@ export default function Home() {
           <Testimonies />
         </div>
       </div>
+      <FeaturedLocations />
+      <RentGlobe />
     </div>
   );
 }
