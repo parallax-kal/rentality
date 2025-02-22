@@ -29,7 +29,9 @@ export async function POST(
     const renterId = session.user.id;
     const propertyId = params.propertyId;
 
-    const { checkInDate, checkOutDate } = safeBooking.data;
+    const { checkin, totalCost } = safeBooking.data;
+
+    const { from: checkInDate, to: checkOutDate } = checkin;
 
     const property = await prisma.property.findUnique({
       where: { id: propertyId },
@@ -48,8 +50,16 @@ export async function POST(
         status: { not: "CANCELED" },
         OR: [
           {
-            checkInDate: { lte: new Date(checkOutDate) },
-            checkOutDate: { gte: new Date(checkInDate) },
+            checkInDate: {
+              lte: checkInDate,
+              gte: checkInDate,
+            },
+          },
+          {
+            checkOutDate: {
+              lte: checkOutDate,
+              gte: checkOutDate,
+            },
           },
         ],
       },
@@ -67,7 +77,8 @@ export async function POST(
         renterId,
         propertyId,
         checkInDate,
-        checkOutDate: checkOutDate,
+        checkOutDate,
+        totalCost,
       },
     });
 

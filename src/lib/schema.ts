@@ -29,8 +29,11 @@ export const propertySchema = z.object({
 });
 
 export const renterBookingSchema = z.object({
-  checkInDate: z.coerce.date(),
-  checkOutDate: z.coerce.date(),
+  checkin: z.object({
+    from: z.coerce.date(),
+    to: z.coerce.date(),
+  }),
+  totalCost: z.number(),
 });
 
 export const hostBookingUpdateSchema = z.object({

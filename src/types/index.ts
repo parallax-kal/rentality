@@ -47,7 +47,7 @@ export interface Booking {
   checkIn: Date;
   checkOut: Date;
   status: "PENDING" | "CONFIRMED" | "CANCELED";
-  totalPrice: number;
+  totalCost: number;
   createdAt: Date;
   updatedAt: Date;
 }

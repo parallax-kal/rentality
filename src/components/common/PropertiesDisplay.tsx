@@ -40,6 +40,7 @@ import toast from "react-hot-toast";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSetRecoilState } from "recoil";
 import { redirectAtom } from "@/lib/atom";
+import BookForm from "../forms/BookForm";
 
 const PropertiesDisplay = ({ owned = false }: { owned?: boolean }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -191,6 +192,50 @@ const PropertiesDisplay = ({ owned = false }: { owned?: boolean }) => {
     toast.success("Property link copied to clipboard!", {
       position: "bottom-right",
     });
+  };
+
+  const bookProperty = () => {
+    if (!selectedProperty) return;
+    if (!session?.user) {
+      toast.error("You need to be logged in to book a property.");
+      setRedirect(`/rentals?id=${selectedProperty.id}`);
+      router.push("/auth/login");
+      return;
+    }
+    toast.promise(
+      fetch(
+        `/api/properties/${selectedProperty.id}/bookings`,
+
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            checkInDate: new Date().toISOString(),
+            checkOutDate: new Date().toISOString(),
+          }),
+        }
+      )
+        .then((response) => response.json())
+        .then((result) => {
+          if (!result.success) {
+            throw new Error(result.error || "Something went wrong");
+          }
+          queryClient.invalidateQueries({ queryKey: ["hostProperties"] });
+          setSelectedProperty(undefined);
+        }),
+      {
+        loading: "Booking property",
+        error: (error) =>
+          error?.response?.data?.message ?? "Error booking property.",
+        success: () => {
+          queryClient.invalidateQueries({ queryKey: ["hostProperties"] });
+          setSelectedProperty(undefined);
+          return "Property booked successfully.";
+        },
+      }
+    );
   };
 
   return (
@@ -490,7 +535,8 @@ const PropertiesDisplay = ({ owned = false }: { owned?: boolean }) => {
               >
                 <Copy className="h-4 w-4" /> Share Link
               </Button>
-              {(session?.user?.id === selectedProperty.userId && session?.user?.role === "HOST")  ? (
+              {session?.user?.id === selectedProperty.userId &&
+              session?.user?.role === "HOST" ? (
                 <div className="flex gap-4 mt-4">
                   <Button
                     variant="outline"
@@ -510,21 +556,19 @@ const PropertiesDisplay = ({ owned = false }: { owned?: boolean }) => {
                   </Button>
                 </div>
               ) : (
-                <Button
-                  className="w-full mt-4"
-                  onClick={() => {
-                    if (!session?.user) {
-                      toast.error(
-                        "You need to be logged in to book a property."
-                      );
-                      setRedirect(`/rentals?id=${selectedProperty.id}`);
-                      router.push("/auth/login");
-                      return;
-                    }
-                  }}
-                >
-                  Book Now
-                </Button>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button className="w-full mt-4">
+                      Book Now
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Book Property</DialogTitle>
+                    </DialogHeader>
+                    <BookForm pricePerNight={selectedProperty.pricePerNight} />
+                  </DialogContent>
+                </Dialog>
               )}
             </div>
           </DialogContent>

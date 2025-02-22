@@ -78,7 +78,10 @@ export const PUT = async (
         );
       }
 
-      const { checkInDate, checkOutDate } = safeBooking.data;
+
+      const { checkin } = safeBooking.data;
+
+      const { from: checkInDate, to: checkOutDate } = checkin;
 
       const overlappingBooking = await prisma.booking.findFirst({
         where: {
@@ -86,8 +89,16 @@ export const PUT = async (
           status: { not: "CANCELED" },
           OR: [
             {
-              checkInDate: { lte: new Date(checkOutDate) },
-              checkOutDate: { gte: new Date(checkInDate) },
+              checkInDate: {
+                lte: checkInDate,
+                gte: checkInDate,
+              },
+            },
+            {
+              checkOutDate: {
+                lte: checkOutDate,
+                gte: checkOutDate,
+              },
             },
           ],
         },

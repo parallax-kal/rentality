@@ -82,6 +82,7 @@ model Booking {
     checkInDate  DateTime      @map("checking_date")
     checkOutDate DateTime      @map("checkout_date")
     status       BookingStatus @default(PENDING)
+    totalCost    Float         @map("total_cost")
     createdAt    DateTime      @default(now())
     property     Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
     renter       User          @relation(fields: [renterId], references: [id], onDelete: Cascade)
