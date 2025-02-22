@@ -6,7 +6,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export const isPicture = (url: string) => {
-  const ext = url.split(".").pop();
+  const ext = url?.split(".").pop();
   return ["jpg", "jpeg", "png", "gif"].includes(ext?.toLowerCase() || "");
 };
 

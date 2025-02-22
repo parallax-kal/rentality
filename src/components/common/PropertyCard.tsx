@@ -7,6 +7,7 @@ import {
   Users,
   Calendar,
   Clock,
+  ImageIcon,
 } from "lucide-react";
 import { Property } from "@/types";
 import Image from "next/image";
@@ -36,20 +37,25 @@ const PropertyCard: React.FC<{ property: Property }> = ({ property }) => {
 
   return (
     <div className="border rounded-lg overflow-hidden shadow-md transition-transform hover:shadow-lg hover:scale-[1.01]">
-      <div className="relative h-44">
-        {isPicture(property.mediaUrls[currentImageIndex]) ? (
-          <Image
-            src={property.mediaUrls[currentImageIndex]}
-            alt={`${property.title} - image ${currentImageIndex + 1}`}
-            fill
-            className="w-full h-full object-top object-cover"
-          />
+      <div className="relative flex items-center justify-center h-44">
+        {property.mediaUrls.length > 0 ? (
+          isPicture(property.mediaUrls[currentImageIndex]) ? (
+            <Image
+              src={property.mediaUrls[currentImageIndex]}
+              alt={`${property.title} - image ${currentImageIndex + 1}`}
+              fill
+              className="object-cover object-top"
+              priority
+            />
+          ) : (
+            <video
+              src={property.mediaUrls[currentImageIndex]}
+              controls
+              className="w-full h-full object-contain"
+            />
+          )
         ) : (
-          <video
-            src={property.mediaUrls[currentImageIndex]}
-            controls
-            className="rounded-md"
-          />
+          <ImageIcon className="h-24 w-24 text-gray-400" /> // Shows image icon if no media
         )}
 
         {property.mediaUrls.length > 1 && (

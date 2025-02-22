@@ -66,6 +66,8 @@ const PropertiesDisplay = ({ owned = false }: { owned?: boolean }) => {
       search,
       bookingStatus,
     ],
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const queryParams = new URLSearchParams({
         page: page.toString(),

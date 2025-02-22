@@ -112,6 +112,7 @@ export async function PUT(
     return NextResponse.json({
       message: "Property updated successfully.",
       property: updatedProperty,
+      success: true,
     });
   } catch (error) {
     console.error("Error updating property:", error);

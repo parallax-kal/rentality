@@ -14,7 +14,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
-import { propertySchema } from "@/lib/schema"; // Correct path to your schema
+import { propertySchema, propertyUpdateSchema } from "@/lib/schema"; // Correct path to your schema
 import usePlacesService from "react-google-autocomplete/lib/usePlacesAutocompleteService"; // Import the hook for place prediction
 import z from "zod";
 import * as React from "react";
@@ -43,10 +43,17 @@ import {
 } from "../ui/dialog";
 import Image from "next/image";
 import { toast } from "react-hot-toast";
+import { Property } from "@/types";
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 
-const PropertyFormComponent = ({ closeModal }: { closeModal: () => void }) => {
+const PropertyFormComponent = ({
+  closeModal,
+  property = undefined,
+}: {
+  closeModal: () => void;
+  property?: Property;
+}) => {
   const {
     placesService,
     placePredictions,
@@ -58,18 +65,21 @@ const PropertyFormComponent = ({ closeModal }: { closeModal: () => void }) => {
 
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [previewFile, setPreviewFile] = useState<File | null>(null);
-  const form = useForm<z.infer<typeof propertySchema>>({
-    resolver: zodResolver(propertySchema),
+  const schema = property ? propertySchema : propertyUpdateSchema;
+  const form = useForm<z.infer<typeof schema>>({
+    resolver: zodResolver(schema),
     defaultValues: {
-      title: "",
-      description: "",
-      price: "1",
-      location: "",
+      title: property?.title ?? "",
+      description: property?.description ?? "",
+      price: property?.pricePerNight.toString() ?? "1",
+      location: property?.location ?? "",
       media: undefined,
+      longitude: property?.longitude,
+      latitude: property?.latitude,
     },
   });
 
-  const onSubmit = async (data: z.infer<typeof propertySchema>) => {
+  const onSubmit = async (data: z.infer<typeof schema>) => {
     const formData = new FormData();
 
     // Add text fields
@@ -85,15 +95,26 @@ const PropertyFormComponent = ({ closeModal }: { closeModal: () => void }) => {
     // Add media files
     if (data.media && data.media.length > 0) {
       data.media.forEach((file) => {
-        formData.append("media", file);
+        if (file) formData.append("media", file);
       });
     }
 
+    if (property) {
+      formData.append("previousMedia", JSON.stringify(property.mediaUrls));
+    }
+
+    const fetchPromise = property
+      ? fetch("/api/properties/" + property.id, {
+          method: "PUT",
+          body: formData,
+        })
+      : fetch("/api/properties", {
+          method: "POST",
+          body: formData,
+        });
+
     toast.promise(
-      fetch("/api/properties", {
-        method: "POST",
-        body: formData,
-      })
+      fetchPromise
         .then((response) => response.json())
         .then((result) => {
           if (!result.success) {
@@ -333,7 +354,7 @@ const PropertyFormComponent = ({ closeModal }: { closeModal: () => void }) => {
           />
 
           <Button type="submit" className="w-full">
-            Add Property
+            {property ? "Edit property" : "Add property"}
           </Button>
         </form>
       </Form>

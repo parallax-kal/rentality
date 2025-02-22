@@ -15,6 +15,7 @@ import {
   Star,
   ArrowLeft,
   Calendar,
+  ImageIcon,
 } from "lucide-react";
 import {
   Dialog,
@@ -40,6 +41,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { isPicture } from "@/lib/utils";
 import BookForm from "@/components/forms/BookForm";
 import { Property } from "@/types";
+import PropertyFormComponent from "@/components/forms/PropertyForm";
 
 const PropertyDetailsPage = () => {
   const { propertyId } = useParams();
@@ -70,7 +72,9 @@ const PropertyDetailsPage = () => {
     queryFn: async () => {
       if (!propertyId) return null;
 
-      const res = await fetch(`/api/properties/${propertyId}?ownedByUser=${owned}`);
+      const res = await fetch(
+        `/api/properties/${propertyId}?ownedByUser=${owned}`
+      );
       if (!res.ok) throw new Error("Failed to fetch property details");
 
       const data = await res.json();
@@ -249,21 +253,25 @@ const PropertyDetailsPage = () => {
 
           {/* Property Images */}
           <div className="relative rounded-xl overflow-hidden bg-black/5 border">
-            <div className="aspect-[16/9] w-full relative">
-              {isPicture(property.mediaUrls[currentImageIndex]) ? (
-                <Image
-                  src={property.mediaUrls[currentImageIndex]}
-                  alt={`${property.title} - image ${currentImageIndex + 1}`}
-                  fill
-                  className="object-cover object-top"
-                  priority
-                />
+            <div className="aspect-[16/9] flex items-center justify-center w-full relative">
+              {property.mediaUrls.length > 0 ? (
+                isPicture(property.mediaUrls[currentImageIndex]) ? (
+                  <Image
+                    src={property.mediaUrls[currentImageIndex]}
+                    alt={`${property.title} - image ${currentImageIndex + 1}`}
+                    fill
+                    className="object-cover object-top"
+                    priority
+                  />
+                ) : (
+                  <video
+                    src={property.mediaUrls[currentImageIndex]}
+                    controls
+                    className="w-full h-full object-contain"
+                  />
+                )
               ) : (
-                <video
-                  src={property.mediaUrls[currentImageIndex]}
-                  controls
-                  className="w-full h-full object-contain"
-                />
+                <ImageIcon className="h-24 w-24 text-gray-400" /> // Shows image icon if no media
               )}
 
               {property.mediaUrls.length > 1 && (
@@ -325,6 +333,7 @@ const PropertyDetailsPage = () => {
           <Tabs defaultValue="description" className="w-full">
             <TabsList className="w-full grid grid-cols-3">
               <TabsTrigger value="description">Description</TabsTrigger>
+              <TabsTrigger value="location">Location</TabsTrigger>
               <TabsTrigger value="reviews">
                 Reviews ({property.reviews.length})
               </TabsTrigger>
@@ -335,6 +344,18 @@ const PropertyDetailsPage = () => {
                 <p className="whitespace-pre-line text-gray-700">
                   {property.description}
                 </p>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="location" className="mt-6">
+              <div className="w-full h-64 rounded-lg overflow-hidden">
+                <iframe
+                  width="100%"
+                  height="100%"
+                  loading="lazy"
+                  allowFullScreen
+                  src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&q=${property.longitude},${property.latitude}`}
+                />
               </div>
             </TabsContent>
 
@@ -428,9 +449,26 @@ const PropertyDetailsPage = () => {
                 {/* Booking Button or Host Actions */}
                 {session?.user?.id === property.userId ? (
                   <div className="space-y-4">
-                    <Button variant="outline" className="w-full">
-                      Edit Property
-                    </Button>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" className="w-full">
+                          Edit Property
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Edit {property.title}</DialogTitle>
+                        </DialogHeader>
+                        <PropertyFormComponent
+                          property={property}
+                          closeModal={() => {
+                            queryClient.invalidateQueries({
+                              queryKey: ["propertyDetails", propertyId],
+                            });
+                          }}
+                        />
+                      </DialogContent>
+                    </Dialog>
                     <Button variant="destructive" className="w-full">
                       Delete Property
                     </Button>
@@ -450,7 +488,6 @@ const PropertyDetailsPage = () => {
                           queryClient.invalidateQueries({
                             queryKey: ["propertyDetails", propertyId],
                           });
-                          toast.success("Booking successful!");
                         }}
                       />
                     </DialogContent>
@@ -470,7 +507,7 @@ const PropertyDetailsPage = () => {
                   <p>Total Bookings: {property._count?.bookings || 0}</p>
                 </div>
               </CardFooter>
-            </Card> 
+            </Card>
 
             {/* Host Information Card */}
             <Card className="mt-6">
