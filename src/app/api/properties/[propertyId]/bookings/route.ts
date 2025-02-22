@@ -44,26 +44,61 @@ export async function POST(
       );
     }
 
+    // The overlapping booking query needs to check all possible overlap scenarios
     const overlappingBooking = await prisma.booking.findFirst({
       where: {
         propertyId,
         status: { not: "CANCELED" },
         OR: [
+          // Case 1: New booking period contains an existing booking
           {
-            checkInDate: {
-              lte: checkInDate,
-              gte: checkInDate,
-            },
+            AND: [
+              { checkInDate: { gte: checkInDate } },
+              { checkOutDate: { lte: checkOutDate } },
+            ],
           },
+          // Case 2: New booking starts during an existing booking
           {
-            checkOutDate: {
-              lte: checkOutDate,
-              gte: checkOutDate,
-            },
+            AND: [
+              { checkInDate: { lte: checkInDate } },
+              { checkOutDate: { gt: checkInDate } },
+            ],
+          },
+          // Case 3: New booking ends during an existing booking
+          {
+            AND: [
+              { checkInDate: { lt: checkOutDate } },
+              { checkOutDate: { gte: checkOutDate } },
+            ],
+          },
+          // Case 4: Existing booking completely contains the new booking period
+          {
+            AND: [
+              { checkInDate: { lte: checkInDate } },
+              { checkOutDate: { gte: checkOutDate } },
+            ],
           },
         ],
       },
     });
+
+    // Additionally, check if this renter already has a booking for this property
+    const existingRenterBooking = await prisma.booking.findFirst({
+      where: {
+        renterId,
+        propertyId,
+        status: { not: "CANCELED" },
+        // Optional: Only check for active or upcoming bookings
+        checkOutDate: { gte: new Date() },
+      },
+    });
+
+    if (existingRenterBooking) {
+      return NextResponse.json(
+        { error: "You already have an active booking for this property" },
+        { status: 409 }
+      );
+    }
 
     if (overlappingBooking) {
       return NextResponse.json(
@@ -71,7 +106,7 @@ export async function POST(
         { status: 409 }
       );
     }
-
+    
     const newBooking = await prisma.booking.create({
       data: {
         renterId,

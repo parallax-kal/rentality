@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 import { useState, useEffect } from "react";
@@ -31,18 +32,36 @@ import {
 } from "@/components/ui/card";
 import { renterBookingSchema } from "@/lib/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
+import toast from "react-hot-toast";
+import { useSession } from "next-auth/react";
+import { useSetRecoilState } from "recoil";
+import { redirectAtom } from "@/lib/atom";
+import { useRouter } from "next/navigation";
+import { Property } from "@/types";
 
-const BookForm = ({ pricePerNight }: { pricePerNight: number }) => {
+const BookForm = ({
+  property,
+  onBook,
+}: {
+  onBook: () => void;
+  property: Property;
+}) => {
   const [totalCost, setTotalCost] = useState(0);
-  const [nights, setNights] = useState(0);
+  const defaultTo = addDays(new Date(), 7);
+  const [nights, setNights] = useState(
+    differenceInDays(defaultTo, new Date()) + 1
+  );
+
+  const { data: session } = useSession();
 
   const form = useForm<z.infer<typeof renterBookingSchema>>({
     resolver: zodResolver(renterBookingSchema),
     defaultValues: {
       checkin: {
         from: new Date(),
-        to: addDays(new Date(), 7),
+        to: defaultTo,
       },
+      totalCost: property.pricePerNight * nights,
     },
   });
 
@@ -51,28 +70,64 @@ const BookForm = ({ pricePerNight }: { pricePerNight: number }) => {
     const dateRange = form.watch("checkin");
     if (dateRange.from && dateRange.to) {
       const nightCount = differenceInDays(dateRange.to, dateRange.from) + 1;
-      console.log(nightCount);
+      const totalPrice = nightCount * property.pricePerNight;
       setNights(nightCount);
-      setTotalCost(nightCount * pricePerNight);
+      setTotalCost(totalPrice);
+      form.setValue("totalCost", totalPrice);
     }
-  }, [form.watch("checkin"), pricePerNight]);
+  }, [form.watch("checkin"), property]);
+  const setRedirect = useSetRecoilState(redirectAtom);
+  const router = useRouter();
 
   function onSubmit(data: z.infer<typeof renterBookingSchema>) {
-    console.log("Booking submitted:", data, "Total cost:", totalCost);
-    // Handle booking submission here
+    const propertyId = property.id;
+    if (!session?.user) {
+      toast.error("You need to be logged in to book a property.");
+      setRedirect(`/rentals?id=${propertyId}`);
+      router.push("/auth/login");
+      return;
+    }
+    toast.promise(
+      fetch(
+        `/api/properties/${propertyId}/bookings`,
+
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        }
+      )
+        .then((response) => response.json())
+        .then((result) => {
+          if (!result.success) {
+            throw new Error(result.error || "Something went wrong");
+          }
+        }),
+      {
+        loading: `Booking ${property.title}...`,
+        error: (error) =>
+          error?.response?.data?.message ?? "Error booking property.",
+        success: () => {
+          onBook();
+          return property.title + " booked successfully.";
+        },
+      }
+    );
   }
 
   return (
     <Card className="w-full max-w-md mx-auto shadow-lg">
-      <CardHeader className="border-b">
-        <CardTitle className="text-xl">Book Your Stay</CardTitle>
-        <CardDescription>
-          Select dates to see availability and pricing
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="pt-6">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <CardHeader className="border-b">
+            <CardTitle className="text-xl">Book Your Stay</CardTitle>
+            <CardDescription>
+              Select dates to see availability and pricing
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="px-6 pb-0">
             <FormField
               control={form.control}
               name="checkin"
@@ -124,13 +179,13 @@ const BookForm = ({ pricePerNight }: { pricePerNight: number }) => {
             />
 
             {nights > 0 && (
-              <div className="mt-6 pt-6 border-t border-slate-200">
+              <div className="mt-6">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm">
-                    {pricePerNight.toLocaleString()}&nbsp;RWF x {nights} night
+                    {property.pricePerNight.toLocaleString()}&nbsp;RWF x{" "}
+                    {nights} night
                     {nights !== 1 ? "s" : ""}
                   </span>
-                  
                 </div>
                 <div className="flex justify-between items-center font-semibold text-lg mt-4">
                   <span>Total</span>
@@ -138,19 +193,18 @@ const BookForm = ({ pricePerNight }: { pricePerNight: number }) => {
                 </div>
               </div>
             )}
-          </form>
-        </Form>
-      </CardContent>
-      <CardFooter className="border-t">
-        <Button
-          type="submit"
-          onClick={form.handleSubmit(onSubmit)}
-          variant="secondary"
-          className="w-full bg-primary mt-3 py-4 hover:bg-primary/50 text-base font-semibold"
-        >
-          Book Now
-        </Button>
-      </CardFooter>
+          </CardContent>
+          <CardFooter className="border-t">
+            <Button
+              type="submit"
+              variant="secondary"
+              className="w-full bg-primary mt-3 py-4 hover:bg-primary/50 text-base font-semibold"
+            >
+              Book Now
+            </Button>
+          </CardFooter>
+        </form>
+      </Form>
     </Card>
   );
 };
