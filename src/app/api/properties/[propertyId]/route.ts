@@ -53,8 +53,8 @@ export async function PUT(
     if (!safeData.success) {
       return NextResponse.json(
         {
-          mesasgae: "Validation error",
-          details: safeData.error.errors
+          error: "Validation error",
+          message: safeData.error.errors
             .map((error) => error.message)
             .join(", "),
         },

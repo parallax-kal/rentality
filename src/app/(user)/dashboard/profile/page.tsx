@@ -41,18 +41,22 @@ export default function ProfilePage() {
   });
 
   async function onSubmit(data: ProfileForm) {
-     toast.promise(
+    toast.promise(
       fetch("/api/user", {
         method: "PUT",
         body: JSON.stringify(data),
       }).then(async (response) => {
-        if (!response.ok) throw new Error("Failed to update profile");
-        await update()
+        if (!response.ok) {
+          const message = await response.json().message;
+          throw new Error(message);
+        }
+        await update();
       }),
       {
         loading: "Updating profile...",
         success: "Profile updated successfully! 🎉",
-        error: (error) => error.response.data.message ?? "Failed to update profile. Please try again.",
+        error: (error) =>
+          error ?? "Failed to update profile. Please try again.",
       },
       {
         position: "bottom-right",

@@ -102,13 +102,14 @@ const BookForm = ({
         .then((response) => response.json())
         .then((result) => {
           if (!result.success) {
-            throw new Error(result.error || "Something went wrong");
+            throw new Error(result.message);
           }
         }),
       {
         loading: `Booking ${property.title}...`,
-        error: (error) =>
-          error?.response?.data?.message ?? "Error booking property.",
+        error: (error) => {
+          return error?.message ?? "Error booking property.";
+         },
         success: () => {
           onBook();
           return property.title + " booked successfully.";

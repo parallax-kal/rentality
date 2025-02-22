@@ -38,7 +38,12 @@ export const PUT = async (
 
       if (!safeStatusUpdate.success) {
         return NextResponse.json(
-          { error: "Validation error", details: safeStatusUpdate.error.errors },
+          {
+            error: "Validation error",
+            message: safeStatusUpdate.error.errors
+              .map((error) => error.message)
+              .join(", "),
+          },
           { status: 400 }
         );
       }
@@ -73,11 +78,15 @@ export const PUT = async (
 
       if (!safeBooking.success) {
         return NextResponse.json(
-          { error: "Validation error", details: safeBooking.error.errors },
+          {
+            error: "Validation error",
+            messge: safeBooking.error.errors
+              .map((error) => error.message)
+              .join(", "),
+          },
           { status: 400 }
         );
       }
-
 
       const { checkin } = safeBooking.data;
 
@@ -88,25 +97,41 @@ export const PUT = async (
           propertyId,
           status: { not: "CANCELED" },
           OR: [
+            // Case 1: New booking starts during an existing booking
             {
-              checkInDate: {
-                lte: checkInDate,
-                gte: checkInDate,
-              },
+              AND: [
+                { checkInDate: { lte: checkInDate } },
+                { checkOutDate: { gt: checkInDate } }
+              ]
             },
+            // Case 2: New booking ends during an existing booking
             {
-              checkOutDate: {
-                lte: checkOutDate,
-                gte: checkOutDate,
-              },
+              AND: [
+                { checkInDate: { lt: checkOutDate } },
+                { checkOutDate: { gte: checkOutDate } }
+              ]
             },
+            // Case 3: New booking completely contains an existing booking
+            {
+              AND: [
+                { checkInDate: { gte: checkInDate } },
+                { checkOutDate: { lte: checkOutDate } }
+              ]
+            },
+            // Case 4: New booking is completely contained within an existing booking
+            {
+              AND: [
+                { checkInDate: { lte: checkInDate } },
+                { checkOutDate: { gte: checkOutDate } }
+              ]
+            }
           ],
         },
       });
-
+      
       if (overlappingBooking) {
         return NextResponse.json(
-          { error: "Property already booked for these dates" },
+          { message: "Property already booked for these dates" },
           { status: 409 }
         );
       }

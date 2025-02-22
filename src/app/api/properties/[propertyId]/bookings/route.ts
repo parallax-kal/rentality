@@ -21,7 +21,9 @@ export async function POST(
 
     if (!safeBooking.success) {
       return NextResponse.json(
-        { error: "Validation error", details: safeBooking.error.errors },
+        { error: "Validation error", message: safeBooking.error.errors
+          .map((error) => error.message)
+          .join(", "), },
         { status: 400 }
       );
     }
@@ -39,74 +41,55 @@ export async function POST(
 
     if (!property) {
       return NextResponse.json(
-        { error: "Property not found" },
+        { message: "Property not found" },
         { status: 404 }
       );
     }
 
-    // The overlapping booking query needs to check all possible overlap scenarios
     const overlappingBooking = await prisma.booking.findFirst({
       where: {
         propertyId,
         status: { not: "CANCELED" },
         OR: [
-          // Case 1: New booking period contains an existing booking
-          {
-            AND: [
-              { checkInDate: { gte: checkInDate } },
-              { checkOutDate: { lte: checkOutDate } },
-            ],
-          },
-          // Case 2: New booking starts during an existing booking
+          // Case 1: New booking starts during an existing booking
           {
             AND: [
               { checkInDate: { lte: checkInDate } },
-              { checkOutDate: { gt: checkInDate } },
-            ],
+              { checkOutDate: { gt: checkInDate } }
+            ]
           },
-          // Case 3: New booking ends during an existing booking
+          // Case 2: New booking ends during an existing booking
           {
             AND: [
               { checkInDate: { lt: checkOutDate } },
-              { checkOutDate: { gte: checkOutDate } },
-            ],
+              { checkOutDate: { gte: checkOutDate } }
+            ]
           },
-          // Case 4: Existing booking completely contains the new booking period
+          // Case 3: New booking completely contains an existing booking
+          {
+            AND: [
+              { checkInDate: { gte: checkInDate } },
+              { checkOutDate: { lte: checkOutDate } }
+            ]
+          },
+          // Case 4: New booking is completely contained within an existing booking
           {
             AND: [
               { checkInDate: { lte: checkInDate } },
-              { checkOutDate: { gte: checkOutDate } },
-            ],
-          },
+              { checkOutDate: { gte: checkOutDate } }
+            ]
+          }
         ],
       },
     });
-
-    // Additionally, check if this renter already has a booking for this property
-    const existingRenterBooking = await prisma.booking.findFirst({
-      where: {
-        renterId,
-        propertyId,
-        status: { not: "CANCELED" },
-        // Optional: Only check for active or upcoming bookings
-        checkOutDate: { gte: new Date() },
-      },
-    });
-
-    if (existingRenterBooking) {
-      return NextResponse.json(
-        { error: "You already have an active booking for this property" },
-        { status: 409 }
-      );
-    }
-
+    
     if (overlappingBooking) {
       return NextResponse.json(
-        { error: "Property already booked for these dates" },
+        { message: "Property already booked for these dates" },
         { status: 409 }
       );
     }
-    
+
     const newBooking = await prisma.booking.create({
       data: {
         renterId,
@@ -127,7 +110,7 @@ export async function POST(
     );
   } catch (error) {
     return NextResponse.json(
-      { error: "Failed to create booking", details: error },
+      { message: "Failed to create booking", details: error },
       { status: 500 }
     );
   }

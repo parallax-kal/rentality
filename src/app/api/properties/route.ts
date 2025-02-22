@@ -134,8 +134,8 @@ export async function POST(req: NextRequest) {
     if (!safeData.success) {
       return NextResponse.json(
         {
-          message: "Validation error",
-          details: safeData.error.errors
+          error: "Validation error",
+          message: safeData.error.errors
             .map((error) => error.message)
             .join(", "),
         },
@@ -194,7 +194,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("Error processing property submission:", error);
     return NextResponse.json(
-      { message: "Internal server error", details: (error as Error).message },
+      { message: "Internal server error", details: error },
       { status: 500 }
     );
   }
