@@ -6,8 +6,8 @@ import { v4 as uuidv4 } from "uuid";
 import { existsSync } from "fs";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]/route";
 import { BASE_URL } from "@/lib/utils";
+import authOptions from "@/lib/auth";
 
 export const GET = async (req: Request) => {
   try {

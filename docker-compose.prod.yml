@@ -1,0 +1,26 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_HOST: dpg-cut4rilsvqrc73e4b320-a
+      POSTGRES_DB: rentality
+      POSTGRES_USER: lala
+      POSTGRES_PASSWORD: JUuzQ2qQOjYoi52Cm4KZkffd9lW6UdNP
+    ports:
+      - 5432:5432
+    expose:
+      - 5432
+
+  frontend:
+    container_name: frontend
+    build: .
+    restart: always
+    environment:
+      - NODE_ENV=production
+    ports:
+      - 3000:3000
+    env_file: .env
+    depends_on:
+      - postgres
