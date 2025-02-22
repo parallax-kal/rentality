@@ -19,7 +19,7 @@
 
 # production
 /build
-.env
+.env*
 /prisma/migrations
 /public/properties
 
