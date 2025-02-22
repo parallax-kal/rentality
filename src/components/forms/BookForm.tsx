@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 import { useState, useEffect } from "react";
@@ -37,14 +36,16 @@ import { useSession } from "next-auth/react";
 import { useSetRecoilState } from "recoil";
 import { redirectAtom } from "@/lib/atom";
 import { useRouter } from "next/navigation";
-import { Property } from "@/types";
+import { Booking, Property } from "@/types";
 
 const BookForm = ({
   property,
   onBook,
+  booking,
 }: {
   onBook: () => void;
   property: Property;
+  booking?: Booking;
 }) => {
   const [totalCost, setTotalCost] = useState(0);
   const defaultTo = addDays(new Date(), 7);
@@ -53,15 +54,17 @@ const BookForm = ({
   );
 
   const { data: session } = useSession();
+  const setRedirect = useSetRecoilState(redirectAtom);
+  const router = useRouter();
 
   const form = useForm<z.infer<typeof renterBookingSchema>>({
     resolver: zodResolver(renterBookingSchema),
     defaultValues: {
       checkin: {
-        from: new Date(),
-        to: defaultTo,
+        from: booking?.checkInDate ?? new Date(),
+        to: booking?.checkOutDate ?? defaultTo,
       },
-      totalCost: property.pricePerNight * nights,
+      totalCost: booking?.totalCost ?? property.pricePerNight * nights,
     },
   });
 
@@ -76,10 +79,8 @@ const BookForm = ({
       form.setValue("totalCost", totalPrice);
     }
   }, [form.watch("checkin"), property]);
-  const setRedirect = useSetRecoilState(redirectAtom);
-  const router = useRouter();
 
-  function onSubmit(data: z.infer<typeof renterBookingSchema>) {
+  const onSubmit = async (data: z.infer<typeof renterBookingSchema>) => {
     const propertyId = property.id;
     if (!session?.user) {
       toast.error("You need to be logged in to book a property.");
@@ -88,18 +89,20 @@ const BookForm = ({
       return;
     }
 
-    toast.promise(
-      fetch(
-        `/api/properties/${propertyId}/bookings`,
+    const endpoint = booking
+      ? `/api/properties/${propertyId}/bookings/${booking.id}`
+      : `/api/properties/${propertyId}/bookings`;
 
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(data),
-        }
-      )
+    const method = booking ? "PUT" : "POST";
+
+    toast.promise(
+      fetch(endpoint, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      })
         .then((response) => response.json())
         .then((result) => {
           if (!result.success) {
@@ -107,24 +110,30 @@ const BookForm = ({
           }
         }),
       {
-        loading: `Booking ${property.title}...`,
+        loading: booking
+          ? `Updating booking for ${property.title}...`
+          : `Booking ${property.title}...`,
         error: (error) => {
-          return error?.message ?? "Error booking property.";
-         },
+          return error?.message ?? "Error processing booking.";
+        },
         success: () => {
           onBook();
-          return property.title + " booked successfully.";
+          return booking
+            ? `Booking for ${property.title} updated successfully.`
+            : `${property.title} booked successfully.`;
         },
       }
     );
-  }
+  };
 
   return (
     <Card className="w-full max-w-md mx-auto shadow-lg">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <CardHeader className="border-b">
-            <CardTitle className="text-xl">Book Your Stay</CardTitle>
+            <CardTitle className="text-xl">
+              {booking ? "Edit Booking" : "Book Your Stay"}
+            </CardTitle>
             <CardDescription>
               Select dates to see availability and pricing
             </CardDescription>
@@ -202,7 +211,7 @@ const BookForm = ({
               variant="secondary"
               className="w-full bg-primary mt-3 py-4 hover:bg-primary/50 text-base font-semibold"
             >
-              Book Now
+              {booking ? "Update Booking" : "Book Now"}
             </Button>
           </CardFooter>
         </form>

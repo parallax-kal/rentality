@@ -10,9 +10,9 @@ export async function POST(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (session?.user?.role !== "RENTER") {
+    if (!session?.user) {
       return NextResponse.json(
-        { message: "You can't rent create a rent account." },
+        { message: "You are not authorized to do this." },
         { status: 401 }
       );
     }

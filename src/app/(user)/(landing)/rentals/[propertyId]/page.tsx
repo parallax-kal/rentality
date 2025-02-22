@@ -242,7 +242,7 @@ const PropertyDetailsPage = () => {
     if (!property) return;
 
     toast.promise(
-      fetch(`/api/properties/${propertyId}/bookings/${bookingId}`, {
+      fetch(`/api/properties/${propertyId}/bookings/${bookingId}?ownedByUser=true`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
