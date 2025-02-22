@@ -64,7 +64,8 @@ const PropertyDetailsPage = () => {
   const { data: session } = useSession();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
-
+  const [isBookFormOpen, setIsBookFormOpen] = useState(false);
+  const [isEditPropertyFormOpen, setIsEditPropertyFormOpen] = useState(false);
   // Redirect to rentals page if no property ID provided
   useEffect(() => {
     if (!propertyId) {
@@ -521,8 +522,8 @@ const PropertyDetailsPage = () => {
                 )}
               </div>
             </TabsContent>
-            {property.bookings && (
-              <TabsContent value="bookings">
+            <TabsContent value="bookings">
+              {property.bookings && property.bookings.length > 0 ? (
                 <div className="flex flex-col gap-4">
                   {property.bookings.map((booking) => (
                     <Card key={booking.id} className="border-0 shadow-sm">
@@ -602,8 +603,14 @@ const PropertyDetailsPage = () => {
                     </Card>
                   ))}
                 </div>
-              </TabsContent>
-            )}
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">
+                    No bookings yet. Be the first to review!
+                  </p>
+                </div>
+              )}
+            </TabsContent>
           </Tabs>
         </div>
 
@@ -632,7 +639,10 @@ const PropertyDetailsPage = () => {
               <CardContent>
                 {session?.user?.id === property.userId ? (
                   <div className="space-y-4">
-                    <Dialog>
+                    <Dialog
+                      open={isEditPropertyFormOpen}
+                      onOpenChange={setIsEditPropertyFormOpen}
+                    >
                       <DialogTrigger asChild>
                         <Button variant="outline" className="w-full">
                           Edit Property
@@ -648,6 +658,7 @@ const PropertyDetailsPage = () => {
                             queryClient.invalidateQueries({
                               queryKey: ["propertyDetails", propertyId],
                             });
+                            setIsEditPropertyFormOpen(false);
                           }}
                         />
                       </DialogContent>
@@ -661,7 +672,10 @@ const PropertyDetailsPage = () => {
                     </Button>
                   </div>
                 ) : (
-                  <Dialog>
+                  <Dialog
+                    open={isBookFormOpen}
+                    onOpenChange={setIsBookFormOpen}
+                  >
                     <DialogTrigger asChild>
                       <Button className="w-full mb-4">Book Now</Button>
                     </DialogTrigger>
@@ -675,6 +689,7 @@ const PropertyDetailsPage = () => {
                           queryClient.invalidateQueries({
                             queryKey: ["propertyDetails", propertyId],
                           });
+                          setIsBookFormOpen(false);
                         }}
                       />
                     </DialogContent>
@@ -702,7 +717,6 @@ const PropertyDetailsPage = () => {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-4">
-                  {/* Host Image */}
                   <div className="h-12 w-12 rounded-full overflow-hidden">
                     {property.host?.image ? (
                       <Image

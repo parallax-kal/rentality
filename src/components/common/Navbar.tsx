@@ -98,7 +98,7 @@ const Navbar = () => {
   return (
     <div
       className={cn(
-        "z-[10000] px-4 sm:px-8 lg:px-16 py-2 lg:py-3 border-b fixed top-0 w-screen bg-background transition-all left-1/2 -translate-x-1/2",
+        "z-50 px-4 sm:px-8 lg:px-16 py-2 lg:py-3 border-b fixed top-0 w-screen bg-background transition-all left-1/2 -translate-x-1/2",
         {
           "bg-clip-padding backdrop-filter backdrop-blur-2xl bg-opacity-70 shadow-sm":
             scrolled,

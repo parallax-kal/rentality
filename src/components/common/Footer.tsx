@@ -18,10 +18,9 @@ const Footer = () => {
   ];
 
   const socialLinks = [
-    { name: "Facebook", href: "https://facebook.com" },
-    { name: "Twitter", href: "https://twitter.com" },
-    { name: "Instagram", href: "https://instagram.com" },
-    { name: "LinkedIn", href: "https://linkedin.com" },
+    { name: "Twitter", href: "https://twitter.com/KalisaIneza" },
+    { name: "Instagram", href: "https://instagram.com/giovanni__kali" },
+    { name: "LinkedIn", href: "https://linkedin.com/in/kalisa-ineza-giovanni" },
   ];
 
   return (

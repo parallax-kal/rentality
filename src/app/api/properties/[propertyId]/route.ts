@@ -207,6 +207,7 @@ export async function GET(
           _count: {
             select: { bookings: true },
           },
+          host: true,
           bookings: {
             include: {
               renter: {

@@ -7,7 +7,7 @@ export function cn(...inputs: ClassValue[]) {
 
 export const isPicture = (url: string) => {
   const ext = url?.split(".").pop();
-  return ["jpg", "jpeg", "png", "gif"].includes(ext?.toLowerCase() || "");
+  return ["jpg", "jpeg", "png", "gif", "webp"].includes(ext?.toLowerCase() || "");
 };
 
 export const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
