@@ -35,6 +35,12 @@ const PropertyCard: React.FC<{ property: Property }> = ({ property }) => {
     }
   };
 
+  const avgRating =
+    property.reviews.length > 0
+      ? property.reviews.reduce((sum, review) => sum + review.rating, 0) /
+        property.reviews.length
+      : 0;
+
   return (
     <div className="border rounded-lg overflow-hidden shadow-md transition-transform hover:shadow-lg hover:scale-[1.01]">
       <div className="relative flex items-center justify-center h-44">
@@ -88,14 +94,14 @@ const PropertyCard: React.FC<{ property: Property }> = ({ property }) => {
             {property.title}
           </h2>
           <div className="flex items-center gap-1">
-            <div>{property.rating}</div>
             <Rating
-              initialValue={property.rating}
+              initialValue={avgRating}
               readonly
               size={20}
               fillColor="#FFA534"
               emptyColor="#D1D5DB"
             />
+            <div>{avgRating.toFixed(1)}</div>
           </div>
         </div>
 

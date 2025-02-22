@@ -32,7 +32,6 @@ export const propertySchema = z.object({
   previousMedia: z.array(z.string()).optional(),
 });
 
-
 export const renterBookingSchema = z.object({
   checkin: z.object({
     from: z.coerce.date(),
@@ -45,4 +44,9 @@ export const hostBookingUpdateSchema = z.object({
   status: z.nativeEnum(BookingStatus, {
     errorMap: () => ({ message: "Invalid status. Use CONFIRMED or CANCELED" }),
   }),
+});
+
+export const reviewSchema = z.object({
+  comment: z.string().min(2, "Comment must be greater than 3 characters."),
+  rating: z.number().min(1, "Enter rating greater than 1."),
 });

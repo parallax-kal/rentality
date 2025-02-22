@@ -36,12 +36,24 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn, isPicture } from "@/lib/utils";
 import BookForm from "@/components/forms/BookForm";
-import { Property } from "@/types";
+import { Property, Review } from "@/types";
 import PropertyFormComponent from "@/components/forms/PropertyForm";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { reviewSchema } from "@/lib/schema";
+import { z } from "zod";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import moment from "moment";
 
 const PropertyDetailsPage = () => {
   const { propertyId } = useParams();
@@ -52,9 +64,6 @@ const PropertyDetailsPage = () => {
   const { data: session } = useSession();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
-  const [reviewRating, setReviewRating] = useState(0);
-  const [reviewComment, setReviewComment] = useState("");
-  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
   // Redirect to rentals page if no property ID provided
   useEffect(() => {
@@ -82,22 +91,6 @@ const PropertyDetailsPage = () => {
     },
     enabled: !!propertyId,
   });
-
-  // Check if user has already reviewed this property
-  const { data: userReviews } = useQuery({
-    queryKey: ["userReviews", propertyId],
-    queryFn: async () => {
-      if (!propertyId || !session?.user?.id) return null;
-
-      const res = await fetch(`/api/properties/${propertyId}/reviews`);
-      if (!res.ok) throw new Error("Failed to fetch user reviews");
-
-      return res.json();
-    },
-    enabled: !!propertyId && !!session?.user?.id,
-  });
-
-  const hasUserReviewed = userReviews?.reviews?.length > 0;
 
   const nextImage = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -132,56 +125,84 @@ const PropertyDetailsPage = () => {
     });
   };
 
-  const submitReview = async () => {
+  const [isEditReviewDialogOpen, setIsEditReviewDialogOpen] =
+    useState<Review | null>(null);
+
+  const form = useForm({
+    resolver: zodResolver(reviewSchema),
+    defaultValues: {
+      rating: isEditReviewDialogOpen?.rating ?? 0,
+      comment: isEditReviewDialogOpen?.comment ?? "",
+    },
+  });
+
+  useEffect(() => {
+    if (isEditReviewDialogOpen) {
+      form.reset({
+        rating: isEditReviewDialogOpen.rating,
+        comment: isEditReviewDialogOpen.comment,
+      });
+    }
+  }, [isEditReviewDialogOpen, form]);
+
+  const onReviewSubmit = async (data: z.infer<typeof reviewSchema>) => {
     if (!property || !session?.user?.id) {
       toast.error("You must be logged in to submit a review");
       return;
     }
 
-    if (reviewRating === 0) {
-      toast.error("Please select a rating");
-      return;
-    }
-
-    if (!reviewComment.trim()) {
-      toast.error("Please provide a review comment");
-      return;
-    }
-
-    setIsSubmittingReview(true);
-
-    try {
-      const response = await fetch(`/api/properties/${property.id}/reviews`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+    toast.promise(
+      fetch(
+        isEditReviewDialogOpen
+          ? `/api/properties/${property.id}/reviews/${isEditReviewDialogOpen.id}`
+          : `/api/properties/${property.id}/reviews`,
+        {
+          method: isEditReviewDialogOpen ? "PUT" : "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        }
+      ),
+      {
+        loading: isEditReviewDialogOpen
+          ? `Updating review for ${property.title}`
+          : `Reviewing ${property.title}`,
+        error: (error) =>
+          error?.message ?? isEditReviewDialogOpen
+            ? `Error updating review for ${property.title}`
+            : `Error reviewing ${property.title}`,
+        success: () => {
+          queryClient.invalidateQueries(["propertyDetails", propertyId]);
+          queryClient.invalidateQueries(["userReviews", propertyId]);
+          return isEditReviewDialogOpen
+            ? `Review for ${property.title} deleted successfully!`
+            : `Reviewed ${property.title}`;
         },
-        body: JSON.stringify({
-          propertyId: property.id,
-          rating: reviewRating,
-          comment: reviewComment,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to submit review");
       }
+    );
+  };
 
-      toast.success("Review submitted successfully!");
-      setReviewRating(0);
-      setReviewComment("");
-      setIsReviewDialogOpen(false);
-
-      // Refetch property details to update reviews
-      queryClient.invalidateQueries(["propertyDetails", propertyId]);
-      queryClient.invalidateQueries(["userReviews", propertyId]);
-    } catch (error) {
-      toast.error((error as Error).message || "Failed to submit review");
-    } finally {
-      setIsSubmittingReview(false);
+  const handleDeleteReview = async (reviewId: string) => {
+    if (!property || !session?.user?.id) {
+      toast.error("You must be logged in to delete a review");
+      return;
     }
+
+    toast.promise(
+      fetch(`/api/properties/${property.id}/reviews/${reviewId}`, {
+        method: "DELETE",
+      }),
+      {
+        loading: `Deleting review for ${property.title}`,
+        error: (error) =>
+          error?.message ?? `Error deleting review for ${property.title}`,
+        success: () => {
+          queryClient.invalidateQueries(["propertyDetails", propertyId]);
+          return `Review for ${property.title} deleted successfully!`;
+        },
+      }
+    );
   };
 
   const handleDeleteProperty = async () => {
@@ -198,8 +219,7 @@ const PropertyDetailsPage = () => {
         }),
       {
         loading: "Deleting " + property?.title,
-        error: (error) =>
-          error?.response?.data?.message ?? "Error deleting " + property?.title,
+        error: (error) => error?.message ?? "Error deleting " + property?.title,
         success: () => {
           queryClient.invalidateQueries({ queryKey: ["hostProperties"] });
           router.push("/rentals");
@@ -230,8 +250,7 @@ const PropertyDetailsPage = () => {
         }),
       {
         loading: "Updating booking status...",
-        error: (error) =>
-          error?.message ?? "Error updating booking status",
+        error: (error) => error?.message ?? "Error updating booking status",
         success: () => {
           queryClient.invalidateQueries({
             queryKey: ["propertyDetails", propertyId],
@@ -240,7 +259,7 @@ const PropertyDetailsPage = () => {
         },
       }
     );
-  }
+  };
 
   if (isLoading) {
     return (
@@ -277,7 +296,7 @@ const PropertyDetailsPage = () => {
   const userCanReview =
     session?.user?.id &&
     session?.user?.id !== property.userId &&
-    !hasUserReviewed;
+    !property.reviews.find((review) => review?.renter?.id === session.user.id);
 
   return (
     <div className="container max-w-6xl mx-auto py-8 px-4">
@@ -425,10 +444,7 @@ const PropertyDetailsPage = () => {
                       <CardHeader className="pb-2">
                         <div className="flex items-start gap-4">
                           <Image
-                            src={
-                              review.renter.image ||
-                              "/images/placeholder-user.png"
-                            }
+                            src={review.renter.image}
                             alt={review.renter.name}
                             width={48}
                             height={48}
@@ -436,17 +452,22 @@ const PropertyDetailsPage = () => {
                           />
                           <div>
                             <CardTitle className="text-base">
-                              {review.renter.name}
+                              <div>{review.renter.name}</div>
+                              <span className="text-sm text-muted-foreground">
+                                {review.renter.email}
+                              </span>
                             </CardTitle>
                             <div className="flex items-center mt-1">
                               <Rating
                                 initialValue={review.rating}
                                 readonly
-                                rtl={true}
                                 size={16}
                               />
                               <span className="ml-2 text-sm text-muted-foreground">
-                                {new Date().toLocaleDateString()}
+                                Last Edited at &nbsp;
+                                {moment(review.updatedAt).format(
+                                  "DD/MM/YYYY h:mm A"
+                                )}
                               </span>
                             </div>
                           </div>
@@ -455,6 +476,29 @@ const PropertyDetailsPage = () => {
                       <CardContent>
                         <p className="text-gray-700">{review.comment}</p>
                       </CardContent>
+                      {(session?.user?.id === review.renter.id ||
+                        (review.propertyId === property.id &&
+                          property.userId === session?.user.id)) && (
+                        <CardFooter className="flex gap-2">
+                          {session?.user?.id === review.renter.id && (
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                setIsEditReviewDialogOpen(review);
+                                setIsReviewDialogOpen(true);
+                              }}
+                            >
+                              Edit
+                            </Button>
+                          )}
+                          <Button
+                            variant="destructive"
+                            onClick={() => handleDeleteReview(review.id)}
+                          >
+                            Delete
+                          </Button>
+                        </CardFooter>
+                      )}
                     </Card>
                   ))
                 ) : (
@@ -496,7 +540,10 @@ const PropertyDetailsPage = () => {
                           />
                           <div>
                             <CardTitle className="text-base">
-                              {booking.renter.name}
+                              <div>{booking.renter.name}</div>
+                              <span className="text-sm text-muted-foreground">
+                                {booking.renter.email}
+                              </span>
                             </CardTitle>
                             <div className="flex items-center mt-1">
                               <span className="text-sm text-muted-foreground">
@@ -530,13 +577,12 @@ const PropertyDetailsPage = () => {
                         <p className="text-gray-700">
                           Total Cost: {booking.totalCost.toLocaleString()} RWF
                         </p>
-                        {/* Admin Actions */}
                         {session?.user?.role === "HOST" &&
                           booking.status === "PENDING" && (
                             <div className="mt-4 flex gap-2">
                               <Button
                                 onClick={() => {
-                                  handleBookingAction(booking.id, "CONFIRMED")
+                                  handleBookingAction(booking.id, "CONFIRMED");
                                 }}
                                 className="px-3 py-1 text-white bg-green-500 rounded-md"
                               >
@@ -544,7 +590,7 @@ const PropertyDetailsPage = () => {
                               </Button>
                               <Button
                                 onClick={() => {
-                                  handleBookingAction(booking.id, "CANCELLED")
+                                  handleBookingAction(booking.id, "CANCELLED");
                                 }}
                                 className="px-3 py-1 text-white bg-red-500 rounded-md"
                               >
@@ -561,7 +607,6 @@ const PropertyDetailsPage = () => {
           </Tabs>
         </div>
 
-        {/* Sidebar - Right Side */}
         <div className="lg:col-span-4">
           <div className="sticky top-8">
             <Card>
@@ -585,7 +630,6 @@ const PropertyDetailsPage = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {/* Booking Button or Host Actions */}
                 {session?.user?.id === property.userId ? (
                   <div className="space-y-4">
                     <Dialog>
@@ -652,24 +696,49 @@ const PropertyDetailsPage = () => {
               </CardFooter>
             </Card>
 
-            {/* Host Information Card */}
             <Card className="mt-6">
               <CardHeader>
                 <CardTitle className="text-lg">About the Host</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
-                    <span className="text-xl font-bold">
-                      {property.host?.name?.charAt(0) || "H"}
-                    </span>
+                  {/* Host Image */}
+                  <div className="h-12 w-12 rounded-full overflow-hidden">
+                    {property.host?.image ? (
+                      <Image
+                        src={property.host.image}
+                        alt={property.host.name || "Host"}
+                        width={48}
+                        height={48}
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+                        <span className="text-xl font-bold">
+                          {property.host?.name?.charAt(0) || "H"}
+                        </span>
+                      </div>
+                    )}
                   </div>
+
+                  {/* Host Details */}
                   <div>
+                    {/* Host Name */}
                     <p className="font-medium">
                       {property.host?.name || "Property Host"}
                     </p>
+
+                    {/* Host Email */}
+                    {property.host?.email && (
+                      <p className="text-sm text-muted-foreground">
+                        {property.host.email}
+                      </p>
+                    )}
+
+                    {/* Host Since */}
                     <p className="text-sm text-muted-foreground">
-                      Host since {new Date(property.createdAt).getFullYear()}
+                      Host last updated At
+                      {moment(property.updatedAt).format("DD/MM/YYYY h:mm A")}
                     </p>
                   </div>
                 </div>
@@ -679,7 +748,6 @@ const PropertyDetailsPage = () => {
         </div>
       </div>
 
-      {/* Review Dialog */}
       <Dialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -688,45 +756,60 @@ const PropertyDetailsPage = () => {
               Share your experience at {property.title}
             </DialogDescription>
           </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="rating">Your Rating</Label>
-              <div className="mt-2 ">
-                <Rating
-                  onClick={(rate: number) => setReviewRating(rate)}
-                  initialValue={reviewRating}
-                  size={30}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="comment">Your Review</Label>
-              <Textarea
-                id="comment"
-                placeholder="What did you like or dislike about your stay?"
-                value={reviewComment}
-                onChange={(e) => setReviewComment(e.target.value)}
-                rows={4}
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsReviewDialogOpen(false)}
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onReviewSubmit)}
+              className="space-y-4 py-4"
             >
-              Cancel
-            </Button>
-            <Button onClick={submitReview} disabled={isSubmittingReview}>
-              {isSubmittingReview && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
-              Submit Review
-            </Button>
-          </DialogFooter>
+              <FormField
+                control={form.control}
+                name="rating"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel htmlFor="rating">Your Rating</FormLabel>
+                    <FormControl>
+                      <Rating
+                        onClick={field.onChange}
+                        initialValue={field.value}
+                        size={30}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="comment"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel htmlFor="comment">Your Review</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        id="comment"
+                        placeholder="What did you like or dislike about your stay?"
+                        {...field}
+                        rows={4}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsReviewDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit">
+                  {isEditReviewDialogOpen ? "Edit Review" : "Submit review"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
     </div>

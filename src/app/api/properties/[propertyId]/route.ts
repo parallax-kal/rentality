@@ -197,7 +197,7 @@ export async function GET(
     const { searchParams } = new URL(req.url);
 
     const ownedByUser = searchParams.get("ownedByUser") === "true";
-    
+
     let property;
     if (session?.user?.role === "HOST" && ownedByUser) {
       property = await prisma.property.findUnique({
@@ -225,7 +225,18 @@ export async function GET(
       property = await prisma.property.findUnique({
         where: { id: params.propertyId },
         include: {
-          reviews: true,
+          reviews: {
+            include: {
+              renter: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  image: true,
+                },
+              },
+            },
+          },
           host: {
             select: {
               id: true,

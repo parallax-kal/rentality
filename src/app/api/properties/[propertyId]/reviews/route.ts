@@ -3,11 +3,13 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import prisma from "@/lib/prisma";
 
-export async function GET(req: NextRequest, {params}: {params: {propertyId: string}}) {
+export async function GET(
+  req: NextRequest,
+  { params }: { params: { propertyId: string } }
+) {
   try {
-    
-    const propertyId= params.propertyId;
-    
+    const propertyId = params.propertyId;
+
     if (!propertyId) {
       return NextResponse.json(
         { message: "Property ID is required" },
@@ -36,7 +38,6 @@ export async function GET(req: NextRequest, {params}: {params: {propertyId: stri
     return NextResponse.json(
       {
         reviews,
-        count: reviews.length,
       },
       { status: 200 }
     );
@@ -52,7 +53,6 @@ export async function GET(req: NextRequest, {params}: {params: {propertyId: stri
   }
 }
 
-// POST handler - create a new review
 export async function POST(
   req: NextRequest,
   { params }: { params: { propertyId: string } }
@@ -143,65 +143,3 @@ export async function POST(
   }
 }
 
-// DELETE handler - remove a review
-export async function DELETE(req: NextRequest) {
-  try {
-    const { searchParams } = new URL(req.url);
-    
-    const reviewId = searchParams.get("id");
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
-
-    if (!reviewId) {
-      return NextResponse.json(
-        { message: "Review ID is required" },
-        { status: 400 }
-      );
-    }
-
-    // Find the review
-    const review = await prisma.review.findUnique({
-      where: { id: reviewId },
-    });
-
-    if (!review) {
-      return NextResponse.json(
-        { message: "Review not found" },
-        { status: 404 }
-      );
-    }
-
-    // Check if the user owns this review or is an admin
-    if (review.renterId !== session.user.id) {
-      return NextResponse.json(
-        { message: "You are not authorized to delete this review" },
-        { status: 403 }
-      );
-    }
-
-    // Delete the review
-    await prisma.review.delete({
-      where: { id: reviewId },
-    });
-
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Review deleted successfully",
-      },
-      { status: 200 }
-    );
-  } catch (error) {
-    console.error("Error deleting review:", error);
-    return NextResponse.json(
-      {
-        message: "Internal server error",
-        details: (error as Error).message,
-      },
-      { status: 500 }
-    );
-  }
-}
