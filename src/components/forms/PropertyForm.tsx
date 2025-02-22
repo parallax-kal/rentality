@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 import { useState, useEffect } from "react";
@@ -396,7 +397,7 @@ const PropertyFormComponent = ({
                   alt="Preview"
                   height={0}
                   width={0}
-                  className="!max-w-full !w-auto !h-[80vh] rounded"
+                  className="!max-w-full object-cover object-top !w-auto !h-[80vh] rounded"
                 />
               ) : (
                 <video
