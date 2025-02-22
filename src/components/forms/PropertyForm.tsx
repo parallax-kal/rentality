@@ -14,8 +14,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
-import { propertySchema, propertyUpdateSchema } from "@/lib/schema"; // Correct path to your schema
-import usePlacesService from "react-google-autocomplete/lib/usePlacesAutocompleteService"; // Import the hook for place prediction
+import { propertySchema } from "@/lib/schema"; // Correct path to your schema
 import z from "zod";
 import * as React from "react";
 import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
@@ -44,8 +43,10 @@ import {
 import Image from "next/image";
 import { toast } from "react-hot-toast";
 import { Property } from "@/types";
+import usePlacesService from "react-google-autocomplete/lib/usePlacesAutocompleteService";
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+const MAP_DEFAULT_CENTER = { lat: -1.9501, lng: 30.0586 }; // Default: Kigali, Rwanda
 
 const PropertyFormComponent = ({
   closeModal,
@@ -54,6 +55,8 @@ const PropertyFormComponent = ({
   closeModal: () => void;
   property?: Property;
 }) => {
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [previewFile, setPreviewFile] = useState<File | null>(null);
   const {
     placesService,
     placePredictions,
@@ -63,23 +66,53 @@ const PropertyFormComponent = ({
     apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
   });
 
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
-  const [previewFile, setPreviewFile] = useState<File | null>(null);
-  const schema = property ? propertySchema : propertyUpdateSchema;
-  const form = useForm<z.infer<typeof schema>>({
-    resolver: zodResolver(schema),
+  const form = useForm<z.infer<typeof propertySchema>>({
+    resolver: zodResolver(propertySchema),
     defaultValues: {
       title: property?.title ?? "",
       description: property?.description ?? "",
       price: property?.pricePerNight.toString() ?? "1",
-      location: property?.location ?? "",
+      location: property?.location ?? "Kigali, Rwanda",
       media: undefined,
-      longitude: property?.longitude,
-      latitude: property?.latitude,
+      longitude: property?.longitude ?? MAP_DEFAULT_CENTER.lng,
+      latitude: property?.latitude ?? MAP_DEFAULT_CENTER.lat,
     },
   });
 
-  const onSubmit = async (data: z.infer<typeof schema>) => {
+  const geocodeAddress = async (address: string) => {
+    try {
+      const geocoder = new google.maps.Geocoder();
+      geocoder.geocode({ address }, (results, status) => {
+        if (status === google.maps.GeocoderStatus.OK && results?.[0]) {
+          const { lat, lng } = results[0].geometry.location;
+          form.setValue("latitude", lat());
+          form.setValue("longitude", lng());
+        }
+      });
+    } catch (error) {
+      console.error("Geocoding error:", error);
+    }
+  };
+
+  useEffect(() => {
+    // Fetch place details for the first place prediction when predictions are available
+    if (placePredictions.length) {
+      placesService?.getDetails(
+        {
+          placeId: placePredictions[0].place_id,
+        },
+        (placeDetails) => {
+          const location = placeDetails?.formatted_address;
+          if (location) {
+            form.setValue("location", location);
+            geocodeAddress(location);
+          }
+        }
+      );
+    }
+  }, [placePredictions, placesService, form]);
+
+  const onSubmit = async (data: z.infer<typeof propertySchema>) => {
     const formData = new FormData();
 
     // Add text fields
@@ -137,27 +170,6 @@ const PropertyFormComponent = ({
       }
     );
   };
-
-  useEffect(() => {
-    // Fetch place details for the first place prediction when predictions are available
-    if (placePredictions.length) {
-      placesService?.getDetails(
-        {
-          placeId: placePredictions[0].place_id,
-        },
-        (placeDetails) => {
-          const lat = placeDetails?.geometry?.location?.lat() ?? 0;
-          const long = placeDetails?.geometry?.location?.lng() ?? 0;
-          const location = placeDetails?.formatted_address;
-          if (location) {
-            form.setValue("location", location);
-            form.setValue("longitude", long);
-            form.setValue("latitude", lat);
-          }
-        }
-      );
-    }
-  }, [placePredictions, placesService, form]);
 
   const { getRootProps, getInputProps } = useDropzone({
     accept: { "image/*": [], "video/*": [] },
@@ -268,6 +280,7 @@ const PropertyFormComponent = ({
                                     value={prediction.description}
                                     onSelect={(currentValue) => {
                                       field.onChange(currentValue);
+                                      geocodeAddress(currentValue);
                                     }}
                                   >
                                     <Check
@@ -293,6 +306,17 @@ const PropertyFormComponent = ({
               </FormItem>
             )}
           />
+          <div className="w-full h-64 rounded-lg overflow-hidden">
+            <iframe
+              width="100%"
+              height="100%"
+              loading="lazy"
+              allowFullScreen
+              src={`https://www.google.com/maps/embed/v1/place?key=${
+                process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+              }&q=${form.watch("latitude")},${form.watch("longitude")}`}
+            />
+          </div>
 
           <FormField
             control={form.control}

@@ -248,7 +248,7 @@ const PropertiesDisplay = ({ owned = false }: { owned?: boolean }) => {
         <div className="grid min-h-[35rem] xs:grid-cols-2 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
           {properties.map((property) => (
             <Link
-              href={`/rentals/${property.id}?owned=${owned}`}
+              href={`/rentals/${property.id}${owned ? "?owned=true" : ""}`}
               key={property.id}
               className="cursor-pointer"
             >

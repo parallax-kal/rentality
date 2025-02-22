@@ -28,27 +28,10 @@ export const propertySchema = z.object({
       })
     )
     .optional(),
+
+  previousMedia: z.array(z.string()).optional(),
 });
 
-// add previous media link
-export const propertyUpdateSchema = z.object({
-  title: z.string().min(3, "Title must be at least 3 characters"),
-  description: z.string().min(5, "Description must be at least 5 characters"),
-  price: z.string().regex(/^(?!0(\.0+)?$)(\d+(\.\d+)?|\.\d+)$|^([1-9]\d*)$/, {
-    message: "Price must be a number greater than or equal to 1",
-  }),
-  location: z.string().min(3, "Location must be at least 3 characters."),
-  longitude: z.number(),
-  latitude: z.number(),
-  media: z
-    .array(
-      zfd.file().refine((file) => file.size < MAX_FILE_SIZE, {
-        message: "File can't be bigger than 1MB.",
-      })
-    )
-    .optional(),
-  previousMedia: z.array(z.string()),
-});
 
 export const renterBookingSchema = z.object({
   checkin: z.object({

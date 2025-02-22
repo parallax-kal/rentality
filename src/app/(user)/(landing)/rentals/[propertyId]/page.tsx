@@ -14,8 +14,8 @@ import {
   Copy,
   Star,
   ArrowLeft,
-  Calendar,
   ImageIcon,
+  MonitorPlay,
 } from "lucide-react";
 import {
   Dialog,
@@ -186,6 +186,31 @@ const PropertyDetailsPage = () => {
     }
   };
 
+  const handleDeleteProperty = async () => {
+    if (!property) return;
+    toast.promise(
+      fetch(`/api/properties/${property.id}`, {
+        method: "DELETE",
+      })
+        .then((response) => response.json())
+        .then((result) => {
+          if (!result.success) {
+            throw new Error(result.error || "Something went wrong");
+          }
+        }),
+      {
+        loading: "Deleting " + property?.title,
+        error: (error) =>
+          error?.response?.data?.message ?? "Error deleting " + property?.title,
+        success: () => {
+          queryClient.invalidateQueries({ queryKey: ["hostProperties"] });
+          router.push("/rentals");
+          return property?.title + " deleted successfully.";
+        },
+      }
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4">
@@ -298,7 +323,6 @@ const PropertyDetailsPage = () => {
               )}
             </div>
 
-            {/* Thumbnail Preview */}
             {property.mediaUrls.length > 1 && (
               <div className="flex gap-2 p-4 overflow-x-auto pb-2">
                 {property.mediaUrls.map((media, idx) => (
@@ -320,7 +344,7 @@ const PropertyDetailsPage = () => {
                       />
                     ) : (
                       <div className="bg-black h-full w-full flex items-center justify-center">
-                        <Calendar className="h-8 w-8 text-white" />
+                        <MonitorPlay className="h-8 w-8 text-white" />
                       </div>
                     )}
                   </div>
@@ -469,7 +493,11 @@ const PropertyDetailsPage = () => {
                         />
                       </DialogContent>
                     </Dialog>
-                    <Button variant="destructive" className="w-full">
+                    <Button
+                      onClick={handleDeleteProperty}
+                      variant="destructive"
+                      className="w-full"
+                    >
                       Delete Property
                     </Button>
                   </div>
