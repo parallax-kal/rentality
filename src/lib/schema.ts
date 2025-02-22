@@ -42,7 +42,6 @@ export const renterBookingSchema = z.object({
 });
 
 export const hostBookingUpdateSchema = z.object({
-  bookingId: z.string().min(1, "Booking ID is required"),
   status: z.nativeEnum(BookingStatus, {
     errorMap: () => ({ message: "Invalid status. Use CONFIRMED or CANCELED" }),
   }),

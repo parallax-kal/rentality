@@ -3,12 +3,11 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import prisma from "@/lib/prisma";
 
-export async function GET(req: NextRequest) {
+export async function GET(req: NextRequest, {params}: {params: {propertyId: string}}) {
   try {
-    const { searchParams } = new URL(req.url);
-    const propertyId = searchParams.get("propertyId");
-    const userId = searchParams.get("userId");
-
+    
+    const propertyId= params.propertyId;
+    
     if (!propertyId) {
       return NextResponse.json(
         { message: "Property ID is required" },
@@ -17,11 +16,6 @@ export async function GET(req: NextRequest) {
     }
 
     const whereCondition: Record<string, string> = { propertyId };
-
-    // If userId is provided, filter reviews by this user
-    if (userId) {
-      whereCondition.renterId = userId;
-    }
 
     const reviews = await prisma.review.findMany({
       where: whereCondition,

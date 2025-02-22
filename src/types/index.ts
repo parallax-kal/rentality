@@ -36,6 +36,7 @@ export interface Property {
   _count: {
     bookings: number;
   };
+  bookings: Booking[];
   reviews: Review[];
 }
 
@@ -45,8 +46,8 @@ export interface Booking {
   property: Property;
   renterId: string;
   renter: User;
-  checkIn: Date;
-  checkOut: Date;
+  checkInDate: Date,
+  checkOutDate: Date,
   status: "PENDING" | "CONFIRMED" | "CANCELED";
   totalCost: number;
   createdAt: Date;

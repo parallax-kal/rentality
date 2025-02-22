@@ -38,7 +38,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { isPicture } from "@/lib/utils";
+import { cn, isPicture } from "@/lib/utils";
 import BookForm from "@/components/forms/BookForm";
 import { Property } from "@/types";
 import PropertyFormComponent from "@/components/forms/PropertyForm";
@@ -89,9 +89,7 @@ const PropertyDetailsPage = () => {
     queryFn: async () => {
       if (!propertyId || !session?.user?.id) return null;
 
-      const res = await fetch(
-        `/api/reviews?propertyId=${propertyId}&userId=${session.user.id}`
-      );
+      const res = await fetch(`/api/properties/${propertyId}/reviews`);
       if (!res.ok) throw new Error("Failed to fetch user reviews");
 
       return res.json();
@@ -153,7 +151,7 @@ const PropertyDetailsPage = () => {
     setIsSubmittingReview(true);
 
     try {
-      const response = await fetch("/api/reviews", {
+      const response = await fetch(`/api/properties/${property.id}/reviews`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -210,6 +208,39 @@ const PropertyDetailsPage = () => {
       }
     );
   };
+
+  const handleBookingAction = async (bookingId: string, status: string) => {
+    if (!property) return;
+
+    toast.promise(
+      fetch(`/api/properties/${propertyId}/bookings/${bookingId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          status,
+        }),
+      })
+        .then((response) => response.json())
+        .then((result) => {
+          if (!result.success) {
+            throw new Error(result.message || "Something went wrong");
+          }
+        }),
+      {
+        loading: "Updating booking status...",
+        error: (error) =>
+          error?.message ?? "Error updating booking status",
+        success: () => {
+          queryClient.invalidateQueries({
+            queryKey: ["propertyDetails", propertyId],
+          });
+          return "Booking status updated successfully.";
+        },
+      }
+    );
+  }
 
   if (isLoading) {
     return (
@@ -276,7 +307,6 @@ const PropertyDetailsPage = () => {
             </div>
           </div>
 
-          {/* Property Images */}
           <div className="relative rounded-xl overflow-hidden bg-black/5 border">
             <div className="aspect-[16/9] flex items-center justify-center w-full relative">
               {property.mediaUrls.length > 0 ? (
@@ -353,14 +383,18 @@ const PropertyDetailsPage = () => {
             )}
           </div>
 
-          {/* Property Details & Tabs */}
           <Tabs defaultValue="description" className="w-full">
-            <TabsList className="w-full grid grid-cols-3">
+            <TabsList className="w-full grid grid-cols-4">
               <TabsTrigger value="description">Description</TabsTrigger>
               <TabsTrigger value="location">Location</TabsTrigger>
               <TabsTrigger value="reviews">
-                Reviews ({property.reviews.length})
+                Reviews &#40;{property.reviews.length}&#41;
               </TabsTrigger>
+              {property.bookings && (
+                <TabsTrigger value="bookings">
+                  Bookings &#40;{property.bookings.length}&#41;
+                </TabsTrigger>
+              )}
             </TabsList>
 
             <TabsContent value="description" className="mt-6">
@@ -378,7 +412,7 @@ const PropertyDetailsPage = () => {
                   height="100%"
                   loading="lazy"
                   allowFullScreen
-                  src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&q=${property.longitude},${property.latitude}`}
+                  src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&q=${property.latitude},${property.longitude}`}
                 />
               </div>
             </TabsContent>
@@ -443,6 +477,87 @@ const PropertyDetailsPage = () => {
                 )}
               </div>
             </TabsContent>
+            {property.bookings && (
+              <TabsContent value="bookings">
+                <div className="flex flex-col gap-4">
+                  {property.bookings.map((booking) => (
+                    <Card key={booking.id} className="border-0 shadow-sm">
+                      <CardHeader className="pb-2">
+                        <div className="flex items-start gap-4">
+                          <Image
+                            src={
+                              booking.renter.image ||
+                              "/images/placeholder-user.png"
+                            }
+                            alt={booking.renter.name}
+                            width={48}
+                            height={48}
+                            className="rounded-full object-cover"
+                          />
+                          <div>
+                            <CardTitle className="text-base">
+                              {booking.renter.name}
+                            </CardTitle>
+                            <div className="flex items-center mt-1">
+                              <span className="text-sm text-muted-foreground">
+                                {new Date(
+                                  booking.checkInDate
+                                ).toLocaleDateString()}{" "}
+                                -{" "}
+                                {new Date(
+                                  booking.checkOutDate
+                                ).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-600 mt-1">
+                              Status:{" "}
+                              <span
+                                className={cn("font-semibold", {
+                                  "text-green-500":
+                                    booking.status === "CONFIRMED",
+                                  "text-red-500": booking.status === "CANCELED",
+                                  "text-yellow-500":
+                                    booking.status === "PENDING",
+                                })}
+                              >
+                                {booking.status}
+                              </span>
+                            </p>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="flex justify-between items-center">
+                        <p className="text-gray-700">
+                          Total Cost: {booking.totalCost.toLocaleString()} RWF
+                        </p>
+                        {/* Admin Actions */}
+                        {session?.user?.role === "HOST" &&
+                          booking.status === "PENDING" && (
+                            <div className="mt-4 flex gap-2">
+                              <Button
+                                onClick={() => {
+                                  handleBookingAction(booking.id, "CONFIRMED")
+                                }}
+                                className="px-3 py-1 text-white bg-green-500 rounded-md"
+                              >
+                                Approve
+                              </Button>
+                              <Button
+                                onClick={() => {
+                                  handleBookingAction(booking.id, "CANCELLED")
+                                }}
+                                className="px-3 py-1 text-white bg-red-500 rounded-md"
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </TabsContent>
+            )}
           </Tabs>
         </div>
 

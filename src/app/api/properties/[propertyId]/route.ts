@@ -189,14 +189,15 @@ export async function DELETE(
 }
 
 export async function GET(
-  _: NextRequest,
+  req: NextRequest,
   { params }: { params: { propertyId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
-    const searchParams = new URLSearchParams(params);
+    const { searchParams } = new URL(req.url);
 
     const ownedByUser = searchParams.get("ownedByUser") === "true";
+    
     let property;
     if (session?.user?.role === "HOST" && ownedByUser) {
       property = await prisma.property.findUnique({

@@ -20,7 +20,6 @@ export const PUT = async (
 
     const propertyId = params.propertyId as string;
     const bookingId = params.bookingId as string;
-
     if (session?.user?.role === "HOST") {
       const property = await prisma.property.findFirst({
         where: { id: propertyId, userId: session.user.id },
