@@ -6,7 +6,7 @@ import { AnimatedTestimonials } from "@/components/ui/animated-testimonials";
 import { Property } from "@/types";
 
 const TestimonialSkeleton = () => (
-  <div className="space-y-4">
+  <div className="space-y-4 max-w-[14rem]">
     <div className="flex items-center space-x-4">
       <Skeleton className="h-12 w-12 rounded-full" />
       <div className="space-y-2">
@@ -49,17 +49,12 @@ export const Testimonials = () => {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="p-6 bg-card rounded-lg border">
-            <TestimonialSkeleton />
-          </div>
-        ))}
+      <div className="mx-auto">
+        <TestimonialSkeleton />
       </div>
     );
   }
 
-  // Don't render if no reviews
   if (!reviewsData || reviewsData.length === 0) {
     return null;
   }

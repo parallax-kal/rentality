@@ -164,7 +164,13 @@ const PropertyDetailsPage = () => {
           },
           body: JSON.stringify(data),
         }
-      ),
+      ).then(async(response) => {
+        if (!response.ok) {
+          const error = await response.json();
+          console.log(error);
+          throw error;
+        }
+      }),
       {
         loading: isEditReviewDialogOpen
           ? `Updating review for ${property.title}`
@@ -176,6 +182,8 @@ const PropertyDetailsPage = () => {
         success: () => {
           queryClient.invalidateQueries(["propertyDetails", propertyId]);
           queryClient.invalidateQueries(["userReviews", propertyId]);
+          setIsReviewDialogOpen(false);
+          setIsEditReviewDialogOpen(null);
           return isEditReviewDialogOpen
             ? `Review for ${property.title} deleted successfully!`
             : `Reviewed ${property.title}`;

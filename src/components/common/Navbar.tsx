@@ -67,7 +67,7 @@ const Navbar = () => {
               </DropdownMenuItem>
             )}
             <DropdownMenuItem asChild>
-              <Link href="/bookings" className="w-full">
+              <Link href="/dashboard/bookings" className="w-full">
                 My Bookings
               </Link>
             </DropdownMenuItem>

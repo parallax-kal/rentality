@@ -17,7 +17,7 @@ export const authOptions: NextAuthOptions = {
       // // Add user data to session
       const dbUser = await prisma.user.findUnique({
         where: { email: session.user.email! },
-        select: { role: true, id: true },
+        select: { role: true, id: true, image: true },
       });
 
       return {
@@ -26,9 +26,9 @@ export const authOptions: NextAuthOptions = {
           ...session.user,
           id: dbUser?.id,
           role: dbUser?.role,
+          image: dbUser?.image,
         },
       };
-      return session;
     },
     async signIn({ user, account }) {
       if (!user.email) {
@@ -46,17 +46,10 @@ export const authOptions: NextAuthOptions = {
               email: user.email,
               name: user.name || "",
               role: null,
-              image: user.image,
+              image: user.image?.slice(0, -6),
             },
           });
-          // return true;
         }
-
-        // Check if existing user has no role
-        // if (existingUser && !existingUser.role) {
-        //   // return "/dashboard/continue";
-        //   return true;
-        // }
       }
 
       return true;
