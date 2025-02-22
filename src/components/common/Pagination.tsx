@@ -82,7 +82,6 @@ const PaginationContainer = ({
           <PaginationItem>
             <PaginationPrevious
               onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-              isDisabled={page === 1}
             />
           </PaginationItem>
 
@@ -91,7 +90,6 @@ const PaginationContainer = ({
           <PaginationItem>
             <PaginationNext
               onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
-              isDisabled={page === totalPages}
             />
           </PaginationItem>
         </PaginationContent>
