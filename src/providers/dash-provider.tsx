@@ -43,7 +43,7 @@ const SessionLoaderProvider = ({ children }: PropsWithChildren) => {
     }
   }, [status, pathname, router]);
 
-  if (status === "loading" && !session) {
+  if (status === "loading" && !session && pathname.startsWith("/dashboard")) {
     return (
       <div className="flex items-center justify-center h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -51,7 +51,7 @@ const SessionLoaderProvider = ({ children }: PropsWithChildren) => {
     );
   }
 
-  return <main>{children}</main>;
+  return <main className="relative">{children}</main>;
 };
 
 export default DashProviders;

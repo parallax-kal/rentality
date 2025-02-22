@@ -59,7 +59,7 @@ const PropertiesDisplay = ({ owned = false }: { owned?: boolean }) => {
 
   const { data, isLoading } = useQuery({
     queryKey: [
-      "hostProperties",
+      "properties",
       page,
       sortBy,
       sortOrder,
@@ -101,7 +101,7 @@ const PropertiesDisplay = ({ owned = false }: { owned?: boolean }) => {
   };
 
   return (
-    <div className="mx-auto p-6 ">
+    <div className="mx-auto max-w-[80rem] p-6 ">
       {owned && (
         <div className="flex flex-col space-y-4 md:space-y-0 md:flex-row md:justify-between md:items-center mb-6">
           <h1 className="text-2xl font-bold">Your Properties</h1>
@@ -119,7 +119,7 @@ const PropertiesDisplay = ({ owned = false }: { owned?: boolean }) => {
               <PropertyForm
                 closeModal={() => {
                   queryClient.invalidateQueries({
-                    queryKey: ["hostProperties"],
+                    queryKey: ["properties"],
                   });
                   setIsModalOpen(false);
                 }}

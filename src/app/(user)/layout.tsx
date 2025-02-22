@@ -6,7 +6,7 @@ const DashboardLayout = ({ children }: PropsWithChildren) => {
   return (
     <DashProviders>
       <Navbar />
-      <main className="mt-20 max-w-[80rem] mx-auto">{children}</main>
+      <main className="mt-20 mx-auto">{children}</main>
     </DashProviders>
   );
 };

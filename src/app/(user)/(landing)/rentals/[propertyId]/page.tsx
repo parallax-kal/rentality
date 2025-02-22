@@ -221,7 +221,7 @@ const PropertyDetailsPage = () => {
         loading: "Deleting " + property?.title,
         error: (error) => error?.message ?? "Error deleting " + property?.title,
         success: () => {
-          queryClient.invalidateQueries({ queryKey: ["hostProperties"] });
+          queryClient.invalidateQueries({ queryKey: ["properties"] });
           router.push("/rentals");
           return property?.title + " deleted successfully.";
         },

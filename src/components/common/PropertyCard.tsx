@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from "react";
 import { Rating } from "react-simple-star-rating";
 import {
@@ -42,7 +44,7 @@ const PropertyCard: React.FC<{ property: Property }> = ({ property }) => {
       : 0;
 
   return (
-    <div className="border rounded-lg overflow-hidden shadow-md transition-transform hover:shadow-lg hover:scale-[1.01]">
+    <div className="border bg-background rounded-lg overflow-hidden shadow-md transition-transform hover:shadow-lg hover:scale-[1.01]">
       <div className="relative flex items-center justify-center h-44">
         {property.mediaUrls.length > 0 ? (
           isPicture(property.mediaUrls[currentImageIndex]) ? (
