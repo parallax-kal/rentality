@@ -47,7 +47,7 @@ export default function ProfilePage() {
         body: JSON.stringify(data),
       }).then(async (response) => {
         if (!response.ok) {
-          const message = await response.json().message;
+          const message = await response.json();
           throw new Error(message);
         }
         await update();
