@@ -203,7 +203,11 @@ export async function GET(
       property = await prisma.property.findUnique({
         where: { id: params.propertyId, userId: session.user.id },
         include: {
-          reviews: true,
+          reviews: {
+            include: {
+              renter: true,
+            }
+          },
           _count: {
             select: { bookings: true },
           },

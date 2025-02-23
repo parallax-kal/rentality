@@ -454,13 +454,15 @@ const PropertyDetailsPage = () => {
                     <Card key={review.id} className="border-0 shadow-sm">
                       <CardHeader className="pb-2">
                         <div className="flex items-start gap-4">
-                          <Image
-                            src={review.renter.image}
-                            alt={review.renter.name}
-                            width={48}
-                            height={48}
-                            className="rounded-full object-cover"
-                          />
+                          {review.renter.image && (
+                            <Image
+                              src={review.renter.image}
+                              alt={review.renter.name}
+                              width={48}
+                              height={48}
+                              className="rounded-full object-cover"
+                            />
+                          )}
                           <div>
                             <CardTitle className="text-base">
                               <div>{review.renter.name}</div>
