@@ -6,15 +6,17 @@ import { AnimatedTestimonials } from "@/components/ui/animated-testimonials";
 import { Property } from "@/types";
 
 const TestimonialSkeleton = () => (
-  <div className="space-y-4 max-w-[14rem]">
-    <div className="flex items-center space-x-4">
-      <Skeleton className="h-12 w-12 rounded-full" />
-      <div className="space-y-2">
-        <Skeleton className="h-4 w-[200px]" />
-        <Skeleton className="h-4 w-[150px]" />
+  <div className="flex justify-center items-center h-full">
+    <div className="space-y-4 max-w-[14rem]">
+      <div className="flex items-center space-x-4">
+        <Skeleton className="h-12 w-12 rounded-full" />
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-[200px]" />
+          <Skeleton className="h-4 w-[150px]" />
+        </div>
       </div>
+      <Skeleton className="h-20 w-full" />
     </div>
-    <Skeleton className="h-20 w-full" />
   </div>
 );
 
@@ -26,7 +28,6 @@ export const Testimonials = () => {
       if (!res.ok) throw new Error("Failed to fetch reviews");
       const data: { properties: Property[] } = await res.json();
 
-    
       const formattedReviews = data.properties
         .flatMap((property) =>
           property.reviews.map((review) => ({
@@ -37,8 +38,8 @@ export const Testimonials = () => {
             rating: review.rating,
           }))
         )
-        .filter((review) => review.quote && review.name) 
-        .slice(0, 5); 
+        .filter((review) => review.quote && review.name) // Filter out incomplete reviews
+        .slice(0, 5); // Limit to 5 reviews
 
       return formattedReviews;
     },
@@ -47,11 +48,7 @@ export const Testimonials = () => {
   });
 
   if (isLoading) {
-    return (
-      <div className="mx-auto">
-        <TestimonialSkeleton />
-      </div>
-    );
+    return <TestimonialSkeleton />;
   }
 
   if (!reviewsData || reviewsData.length === 0) {

@@ -40,8 +40,6 @@ export const GET = async (req: Request) => {
       whereCondition.bookings = { none: {} };
     }
 
-    // console.log(whereCondition)
-
     const orderBy: Record<string, unknown> = {};
 
     if (sortBy === "bookings" || sortBy === "reviews") {
