@@ -15,7 +15,6 @@ export const GET = async (req: Request) => {
     const sortOrder = searchParams.get("sortOrder") === "asc" ? "asc" : "desc";
     const search = searchParams.get("search")?.toLowerCase() || "";
     const bookingStatus = searchParams.get("bookingStatus");
-    const id = searchParams.get("id");
 
     const session = await getServerSession(authOptions);
     const userId = session?.user?.id;
@@ -23,27 +22,25 @@ export const GET = async (req: Request) => {
 
     const whereCondition: Record<string, unknown> = {};
 
-    if (id) {
-      whereCondition.id = id;
-    } else {
-      if (ownedByUser && userId) {
-        whereCondition.userId = userId;
-      }
-
-      if (search) {
-        whereCondition.OR = [
-          { title: { contains: search, mode: "insensitive" } },
-          { description: { contains: search, mode: "insensitive" } },
-          { location: { contains: search, mode: "insensitive" } },
-        ];
-      }
-
-      if (bookingStatus === "booked") {
-        whereCondition.bookings = { some: {} };
-      } else if (bookingStatus === "notBooked") {
-        whereCondition.bookings = { none: {} };
-      }
+    if (ownedByUser && userId) {
+      whereCondition.userId = userId;
     }
+
+    if (search) {
+      whereCondition.OR = [
+        { title: { contains: search, mode: "insensitive" } },
+        { description: { contains: search, mode: "insensitive" } },
+        { location: { contains: search, mode: "insensitive" } },
+      ];
+    }
+
+    if (bookingStatus === "booked") {
+      whereCondition.bookings = { some: {} };
+    } else if (bookingStatus === "notBooked") {
+      whereCondition.bookings = { none: {} };
+    }
+
+    // console.log(whereCondition)
 
     const orderBy: Record<string, unknown> = {};
 
