@@ -66,7 +66,6 @@ const PropertyDetailsPage = () => {
   const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
   const [isBookFormOpen, setIsBookFormOpen] = useState(false);
   const [isEditPropertyFormOpen, setIsEditPropertyFormOpen] = useState(false);
-  // Redirect to rentals page if no property ID provided
   useEffect(() => {
     if (!propertyId) {
       router.push("/rentals");
@@ -354,7 +353,7 @@ const PropertyDetailsPage = () => {
                   />
                 )
               ) : (
-                <ImageIcon className="h-24 w-24 text-gray-400" /> // Shows image icon if no media
+                <ImageIcon className="h-24 w-24 text-gray-400" />
               )}
 
               {property.mediaUrls.length > 1 && (
@@ -743,21 +742,17 @@ const PropertyDetailsPage = () => {
                     )}
                   </div>
 
-                  {/* Host Details */}
                   <div>
-                    {/* Host Name */}
                     <p className="font-medium">
                       {property.host?.name || "Property Host"}
                     </p>
 
-                    {/* Host Email */}
                     {property.host?.email && (
                       <p className="text-sm text-muted-foreground">
                         {property.host.email}
                       </p>
                     )}
 
-                    {/* Host Since */}
                     <p className="text-sm text-muted-foreground">
                       Host last updated At
                       {moment(property.updatedAt).format("DD/MM/YYYY h:mm A")}

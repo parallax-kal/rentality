@@ -52,14 +52,12 @@ const HomeCarousel = () => {
       <Carousel className="w-full">
         <CarouselContent className="-ml-2 md:-ml-4">
           {isLoading ? (
-            // Loading state with 6 skeleton cards
             Array.from({ length: 6 }).map((_, index) => (
               <CarouselItem key={index} className="pl-2 md:pl-4 basis-full sm:basis-1/2 md:basis-1/3">
                 <LoadingCard />
               </CarouselItem>
             ))
           ) : properties?.length > 0 ? (
-            // Actual property cards
             properties.map((property) => (
               <CarouselItem key={property.id} className="pl-2 md:pl-4 basis-full sm:basis-1/2 md:basis-1/3">
                 <Link href={`/rentals/${property.id}`}>
@@ -68,7 +66,6 @@ const HomeCarousel = () => {
               </CarouselItem>
             ))
           ) : (
-            // No properties state
             <CarouselItem className="pl-2 md:pl-4 basis-full">
               <div className="flex items-center justify-center h-48 bg-muted rounded-lg">
                 <p className="text-muted-foreground">No properties available</p>

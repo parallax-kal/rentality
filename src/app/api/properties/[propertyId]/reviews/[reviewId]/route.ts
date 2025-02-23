@@ -16,7 +16,6 @@ export async function DELETE(
     }
 
     if (session.user.role === "HOST") {
-      // Check if the host owns the property
       const property = await prisma.property.findUnique({
         where: { id: propertyId, userId: session.user.id },
       });
@@ -29,7 +28,6 @@ export async function DELETE(
       }
     }
 
-    // Find the review
     const review = await prisma.review.findUnique({
       where:
         session.user.role === "RENTER"
@@ -53,7 +51,6 @@ export async function DELETE(
       );
     }
 
-    // Delete the review
     await prisma.review.delete({ where: { id: reviewId } });
 
     return NextResponse.json(

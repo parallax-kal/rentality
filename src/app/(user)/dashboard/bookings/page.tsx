@@ -33,8 +33,8 @@ const BookingsPage = () => {
 
   const [isEditBookingDialogOpen, setIsEditBookingDialogOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
-  const [page, setPage] = useState(1); // Current page
-  const limit = 10; // Number of items per page
+  const [page, setPage] = useState(1);
+  const limit = 10;
 
   const {
     data: bookingsData,
@@ -140,7 +140,6 @@ const BookingsPage = () => {
             ))}
           </div>
 
-          {/* Pagination */}
           <PaginationContainer
             page={page}
             totalPages={totalPages}
@@ -158,7 +157,6 @@ const BookingsPage = () => {
         </div>
       )}
 
-      {/* Edit Booking Dialog */}
       <Dialog
         open={isEditBookingDialogOpen}
         onOpenChange={setIsEditBookingDialogOpen}

@@ -129,7 +129,6 @@ const BookingCard = ({ booking, onCancel, onEdit }: BookingCardProps) => {
           </p>
         </div>
 
-        {/* Host Information */}
         <div className="mt-4 flex items-center gap-3">
           <div className="h-10 w-10 rounded-full overflow-hidden">
             {booking.property.host?.image ? (

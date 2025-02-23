@@ -14,7 +14,6 @@ const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async session({ session }) {
-      // // Add user data to session
       const dbUser = await prisma.user.findUnique({
         where: { email: session.user.email! },
         select: { role: true, id: true, image: true },
@@ -55,11 +54,9 @@ const authOptions: NextAuthOptions = {
       return true;
     },
     async redirect({ url, baseUrl }) {
-      // Handle custom redirects
       if (url.startsWith("/dashboard/continue")) {
         return `${baseUrl}/dashboard/continue`;
       }
-      // Default redirect behavior
       return url.startsWith(baseUrl) ? url : baseUrl;
     },
   },

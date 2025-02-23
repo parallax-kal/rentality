@@ -140,7 +140,6 @@ export const PUT = async (
       );
     }
 
-    // Update booking and set status to PENDING
     const updatedBooking = await prisma.booking.update({
       where: { id: bookingId, propertyId, renterId: session.user.id },
       data: { checkInDate, checkOutDate, status: "PENDING" }, // Set status to PENDING

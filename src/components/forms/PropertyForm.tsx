@@ -96,7 +96,6 @@ const PropertyFormComponent = ({
   };
 
   useEffect(() => {
-    // Fetch place details for the first place prediction when predictions are available
     if (placePredictions.length) {
       placesService?.getDetails(
         {
@@ -116,17 +115,14 @@ const PropertyFormComponent = ({
   const onSubmit = async (data: z.infer<typeof propertySchema>) => {
     const formData = new FormData();
 
-    // Add text fields
     formData.append("title", data.title);
     formData.append("description", data.description);
     formData.append("price", data.price);
     formData.append("location", data.location);
 
-    // Add coordinates if available
     if (data.longitude) formData.append("longitude", data.longitude.toString());
     if (data.latitude) formData.append("latitude", data.latitude.toString());
 
-    // Add media files
     if (data.media && data.media.length > 0) {
       data.media.forEach((file) => {
         if (file) formData.append("media", file);

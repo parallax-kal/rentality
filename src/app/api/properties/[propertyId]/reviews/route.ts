@@ -71,7 +71,6 @@ export async function POST(
 
     const { rating, comment } = await req.json();
 
-    // Validate required fields
     if (!propertyId || !rating || !comment) {
       return NextResponse.json(
         { message: "Property ID, rating, and comment are required" },
@@ -79,7 +78,6 @@ export async function POST(
       );
     }
 
-    // Validate rating range
     if (rating < 1 || rating > 5) {
       return NextResponse.json(
         { message: "Rating must be between 1 and 5" },
@@ -87,7 +85,6 @@ export async function POST(
       );
     }
 
-    // Check if property exists
     const property = await prisma.property.findUnique({
       where: { id: propertyId },
     });
@@ -99,7 +96,6 @@ export async function POST(
       );
     }
 
-    // Check if user has already reviewed this property
     const existingReview = await prisma.review.findFirst({
       where: {
         propertyId,
@@ -114,7 +110,6 @@ export async function POST(
       );
     }
 
-    // Create new review
     const newReview = await prisma.review.create({
       data: {
         propertyId,

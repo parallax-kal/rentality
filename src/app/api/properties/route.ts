@@ -1,13 +1,9 @@
 import { propertySchema } from "@/lib/schema";
 import { NextRequest, NextResponse } from "next/server";
-import { mkdir, writeFile } from "fs/promises";
-import path from "path";
-import { v4 as uuidv4 } from "uuid";
-import { existsSync } from "fs";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
-import { BASE_URL } from "@/lib/utils";
 import authOptions from "@/lib/auth";
+import { uploadToCloudinary } from "@/lib/claudinary";
 
 export const GET = async (req: Request) => {
   try {
@@ -15,8 +11,8 @@ export const GET = async (req: Request) => {
     const page = parseInt(searchParams.get("page") ?? "1", 10);
     const limit = parseInt(searchParams.get("limit") ?? "10", 10);
     const ownedByUser = searchParams.get("ownedByUser") === "true";
-    const sortBy = searchParams.get("sortBy") || "createdAt"; // Default sorting by 'createdAt'
-    const sortOrder = searchParams.get("sortOrder") === "asc" ? "asc" : "desc"; // Default order is 'desc'
+    const sortBy = searchParams.get("sortBy") || "createdAt";
+    const sortOrder = searchParams.get("sortOrder") === "asc" ? "asc" : "desc";
     const search = searchParams.get("search")?.toLowerCase() || "";
     const bookingStatus = searchParams.get("bookingStatus");
     const id = searchParams.get("id");
@@ -148,31 +144,9 @@ export async function POST(req: NextRequest) {
     const mediaUrls: string[] = [];
 
     if (mediaFiles.length > 0) {
-      const uploadDir = path.join(process.cwd(), "public/properties");
-      const propertyDir = path.join(uploadDir, uuidv4());
-
-      if (!existsSync(uploadDir)) {
-        await mkdir(uploadDir, { recursive: true });
-      }
-
-      await mkdir(propertyDir, { recursive: true });
-
-      for (const file of mediaFiles) {
-        const fileExtension = file.name.split(".").pop() || "";
-        const fileName = `${uuidv4()}.${fileExtension}`;
-        const filePath = path.join(propertyDir, fileName);
-
-        const arrayBuffer = await file.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        await writeFile(filePath, buffer);
-
-        const relativePath = filePath.replace(
-          path.join(process.cwd(), "public"),
-          ""
-        );
-        const fileUrl = `${BASE_URL}${relativePath}`;
-        mediaUrls.push(fileUrl);
-      }
+      const uploadPromises = mediaFiles.map((file) => uploadToCloudinary(file));
+      const uploadedUrls = await Promise.all(uploadPromises);
+      mediaUrls.push(...uploadedUrls);
     }
 
     const property = await prisma.property.create({
@@ -200,5 +174,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-
-

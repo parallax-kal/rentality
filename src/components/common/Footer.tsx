@@ -53,7 +53,6 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Contact Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Contact Us</h3>
             <ul className="space-y-2">
@@ -72,7 +71,6 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Newsletter Subscription */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Subscribe to Our Newsletter</h3>
             <p className="text-muted-foreground">

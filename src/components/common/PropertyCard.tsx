@@ -18,7 +18,6 @@ import { isPicture } from "@/lib/utils";
 const PropertyCard: React.FC<{ property: Property }> = ({ property }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // Handle image navigation
   const nextImage = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (property.mediaUrls.length > 1) {

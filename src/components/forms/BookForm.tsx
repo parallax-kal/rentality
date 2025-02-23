@@ -68,7 +68,6 @@ const BookForm = ({
     },
   });
 
-  // Calculate total cost when dates change
   useEffect(() => {
     const dateRange = form.watch("checkin");
     if (dateRange.from && dateRange.to) {

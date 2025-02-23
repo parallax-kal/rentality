@@ -22,12 +22,11 @@ export const Testimonials = () => {
   const { data: reviewsData, isLoading } = useQuery({
     queryKey: ["featured-reviews"],
     queryFn: async () => {
-      // Fetch reviews from top-rated properties
       const res = await fetch("/api/properties?sortBy=reviews&limit=5");
       if (!res.ok) throw new Error("Failed to fetch reviews");
       const data: { properties: Property[] } = await res.json();
 
-      // Extract and format reviews from properties
+    
       const formattedReviews = data.properties
         .flatMap((property) =>
           property.reviews.map((review) => ({
@@ -38,8 +37,8 @@ export const Testimonials = () => {
             rating: review.rating,
           }))
         )
-        .filter((review) => review.quote && review.name) // Filter out incomplete reviews
-        .slice(0, 5); // Limit to 5 reviews
+        .filter((review) => review.quote && review.name) 
+        .slice(0, 5); 
 
       return formattedReviews;
     },
