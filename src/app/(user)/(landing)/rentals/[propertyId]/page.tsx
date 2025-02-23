@@ -163,7 +163,7 @@ const PropertyDetailsPage = () => {
           },
           body: JSON.stringify(data),
         }
-      ).then(async(response) => {
+      ).then(async (response) => {
         if (!response.ok) {
           const error = await response.json();
           console.log(error);
@@ -241,15 +241,18 @@ const PropertyDetailsPage = () => {
     if (!property) return;
 
     toast.promise(
-      fetch(`/api/properties/${propertyId}/bookings/${bookingId}?ownedByUser=true`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          status,
-        }),
-      })
+      fetch(
+        `/api/properties/${propertyId}/bookings/${bookingId}?ownedByUser=true`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            status,
+          }),
+        }
+      )
         .then((response) => response.json())
         .then((result) => {
           if (!result.success) {
@@ -380,7 +383,7 @@ const PropertyDetailsPage = () => {
               )}
             </div>
 
-            {property.mediaUrls.length > 1 && (
+            {property.mediaUrls.length > 0 && (
               <div className="flex gap-2 p-4 overflow-x-auto pb-2">
                 {property.mediaUrls.map((media, idx) => (
                   <div
