@@ -246,7 +246,7 @@ const PropertyFormComponent = ({
                         variant="outline"
                         role="combobox"
                         aria-expanded={true}
-                        className="w-full justify-between truncateipsis"
+                        className="w-full justify-between truncate"
                       >
                         {field.value || "Search and select location"}
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
