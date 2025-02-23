@@ -1,13 +1,9 @@
 import { propertySchema } from "@/lib/schema";
 import { NextRequest, NextResponse } from "next/server";
-import { mkdir, readdir, unlink, writeFile } from "fs/promises";
-import path from "path";
-import { v4 as uuidv4 } from "uuid";
-import { existsSync } from "fs";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
-import { BASE_URL } from "@/lib/utils";
 import authOptions from "@/lib/auth";
+import { uploadToCloudinary, deleteFromCloudinary } from "@/lib/claudinary";
 
 export async function PUT(
   req: NextRequest,
@@ -66,33 +62,15 @@ export async function PUT(
     const mediaUrls: string[] = [];
 
     if (mediaFiles.length > 0) {
-      const uploadDir = path.join(process.cwd(), "public/properties");
-      const propertyDir = path.join(uploadDir, propertyId);
+      // Upload new media files to Cloudinary
+      const uploadPromises = mediaFiles.map(file => uploadToCloudinary(file));
+      const uploadedUrls = await Promise.all(uploadPromises);
+      mediaUrls.push(...uploadedUrls);
 
-      if (!existsSync(uploadDir)) {
-        await mkdir(uploadDir, { recursive: true });
-      }
-
-      if (!existsSync(propertyDir)) {
-        await mkdir(propertyDir, { recursive: true });
-      }
-
-      for (const file of mediaFiles) {
-        const fileExtension = file.name.split(".").pop() || "";
-        const fileName = `${uuidv4()}.${fileExtension}`;
-        const filePath = path.join(propertyDir, fileName);
-
-        const arrayBuffer = await file.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        await writeFile(filePath, buffer);
-
-        const relativePath = filePath.replace(
-          path.join(process.cwd(), "public"),
-          ""
-        );
-
-        const fileUrl = `${BASE_URL}${relativePath}`;
-        mediaUrls.push(fileUrl);
+      // Delete old media files from Cloudinary
+      if (property.mediaUrls && property.mediaUrls.length > 0) {
+        const deletePromises = property.mediaUrls.map(url => deleteFromCloudinary(url));
+        await Promise.all(deletePromises);
       }
     }
 
@@ -105,7 +83,7 @@ export async function PUT(
         location: safeData.data.location,
         longitude: safeData.data.longitude,
         latitude: safeData.data.latitude,
-        mediaUrls: mediaUrls,
+        mediaUrls: mediaFiles.length > 0 ? mediaUrls : property.mediaUrls,
       },
     });
 
@@ -157,16 +135,10 @@ export async function DELETE(
       );
     }
 
-    const propertyDir = path.join(
-      process.cwd(),
-      "public/properties",
-      propertyId
-    );
-    if (existsSync(propertyDir)) {
-      const files = await readdir(propertyDir);
-      for (const file of files) {
-        await unlink(path.join(propertyDir, file));
-      }
+    // Delete media files from Cloudinary
+    if (property.mediaUrls && property.mediaUrls.length > 0) {
+      const deletePromises = property.mediaUrls.map(url => deleteFromCloudinary(url));
+      await Promise.all(deletePromises);
     }
 
     await prisma.property.delete({
@@ -203,11 +175,7 @@ export async function GET(
       property = await prisma.property.findUnique({
         where: { id: params.propertyId, userId: session.user.id },
         include: {
-          reviews: {
-            include: {
-              renter: true,
-            }
-          },
+          reviews: true,
           _count: {
             select: { bookings: true },
           },
