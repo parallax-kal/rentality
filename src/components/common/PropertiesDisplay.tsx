@@ -25,6 +25,7 @@ import PropertyCard from "@/components/common/PropertyCard";
 import { Property } from "@/types";
 import PaginationContainer from "@/components/common/Pagination";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const PropertiesDisplay = ({ owned = false }: { owned?: boolean }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -57,6 +58,8 @@ const PropertiesDisplay = ({ owned = false }: { owned?: boolean }) => {
     setPage(1);
   };
 
+  const pathname = usePathname();
+
   const { data, isLoading } = useQuery({
     queryKey: [
       "properties",
@@ -65,6 +68,7 @@ const PropertiesDisplay = ({ owned = false }: { owned?: boolean }) => {
       sortOrder,
       search,
       bookingStatus,
+      pathname,
     ],
     refetchOnMount: false,
     refetchOnWindowFocus: false,
